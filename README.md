@@ -1,17 +1,19 @@
 # Sistema de Gestión de Biblioteca Universitaria 📚
 
-<img width="657" height="221" alt="image" src="https://github.com/user-attachments/assets/cec074b0-fb4d-4c34-8824-3f1cdc105f3d" />
+Este es un proyecto universitario desarrollado en **Python** que permite gestionar de manera eficiente el inventario de libros y el registro de usuarios en una biblioteca.
 
-Proyecto desarrollado para la universidad utilizando Python y Tkinter.
+## ✨ Funcionalidades principales
+* **Gestión de Libros:** Registro, consulta y actualización de títulos.
+* **Interfaz Gráfica:** Diseñada con la librería **Tkinter** para una experiencia intuitiva.
+* **Persistencia de Datos:** (Si usas base de datos, puedes mencionarlo aquí).
+* **Control de Usuarios:** Registro de estudiantes y administrativos.
 
-## 🚀 Funcionalidades
-* Registro de libros y usuarios.
-* Gestión de préstamos y devoluciones.
-* Interfaz gráfica intuitiva.
-
-## 🛠️ Requisitos
-* Python 3.x
-* Librerías: `tkinter`
+## 🛠️ Tecnologías utilizadas
+* **Lenguaje:** Python 3.14
+* **Librería de Interfaz:** Tkinter
+* **Control de Versiones:** Git & GitHub
 
 ## 👤 N# Integrantes
 * 6
+---
+*Proyecto de la Universidad - 2026*
