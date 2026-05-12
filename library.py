@@ -4,7 +4,7 @@ import tkinter as tk
 from tkinter import messagebox
 import os
 
-# Cfg
+# Configuracion
 ARCHIVO = "biblioteca_datos.js"
 MAX_F, MAX_C =5, 5
 lista_libros = [] 
