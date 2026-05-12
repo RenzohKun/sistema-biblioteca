@@ -13,6 +13,6 @@ Este es un proyecto universitario desarrollado en **Python** que permite gestion
 * **Control de Versiones:** Git & GitHub
 
 ## 👤 N# Integrantes
-* 6
+* 5
 ---
 *Proyecto de la Universidad - 2026*
