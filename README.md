@@ -4,7 +4,7 @@ Este es un proyecto universitario desarrollado en **Python** que permite gestion
 
 ## ✨ Funcionalidades principales
 * **Gestión de Libros:** Registro, consulta y actualización de títulos.
-* **Interfaz Gráfica:** Diseñada con la librería **Tkinter** para una experiencia intuitiva.
+* **Interfaz Gráfica:** Diseñada con la librería **Tkinter.**
 * **Control de Usuarios:** Registro de estudiantes y administrativos.
 
 ## 🛠️ Tecnologías utilizadas
