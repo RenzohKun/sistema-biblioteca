@@ -1,5 +1,3 @@
-# Version 1.0 de la Liberia
-
 import tkinter as tk
 from tkinter import messagebox
 import os
