@@ -1,12 +1,12 @@
 # login.py
 import tkinter as tk
 from tkinter import messagebox
-from library import main
-from Admin import VentanaAdministrador
+from Logica.library import main
+from Vista.Admin import VentanaAdministrador
 import json
 import os
 
-ARCHIVO_USUARIOS = "usuarios.json"
+ARCHIVO_USUARIOS = "datos/usuarios.json"
 
 def cargar_usuarios():
     """Carga los usuarios desde el archivo JSON adaptado al nuevo formato de objetos"""
@@ -72,7 +72,7 @@ def pantalla_login():
     
     def ir_a_registro():
         root_login.destroy()
-        from registro import pantalla_registro
+        from Vista.registro import pantalla_registro
         pantalla_registro()
 
     # --- DISEÑO DE LA VENTANA ---

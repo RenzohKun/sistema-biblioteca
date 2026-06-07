@@ -1,6 +1,6 @@
 import tkinter as tk
-import login
-import registro
+from Vista import login
+from Vista import registro
 import os
 
 def pantalla_principal():

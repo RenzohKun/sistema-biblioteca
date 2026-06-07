@@ -7,7 +7,7 @@ import os
 # =========================================================================
 # CONFIGURACIÓN DE LOGICA Y MATRICES (Heredado de la librería original)
 # =========================================================================
-ARCHIVO_LIBROS_TXT = "biblioteca_datos.js"
+ARCHIVO_LIBROS_TXT = "datos/biblioteca_datos.js"
 MAX_F, MAX_C = 5, 5
 lista_libros = [] 
 estanteria = [["Libre" for _ in range(MAX_C)] for _ in range(MAX_F)]
@@ -114,9 +114,9 @@ class VentanaAdministrador:
         
         # Conteo dinámico de usuarios desde usuarios.json
         total_usuarios = 0
-        if os.path.exists("usuarios.json"):
+        if os.path.exists("datos/usuarios.json"):
             try:
-                with open("usuarios.json", "r") as f:
+                with open("datos/usuarios.json", "r") as f:
                     datos = json.load(f)
                     total_usuarios = max(0, len(datos) - 1) 
             except: pass
@@ -354,9 +354,9 @@ class VentanaAdministrador:
         self.tabla_usuarios.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
         
-        if os.path.exists("usuarios.json"):
+        if os.path.exists("datos/usuarios.json"):
             try:
-                with open("usuarios.json", "r") as f:
+                with open("datos/usuarios.json", "r") as f:
                     usuarios = json.load(f)
                     for usuario, contrasena in usuarios.items():
                         self.tabla_usuarios.insert("", "end", values=(usuario, contrasena))

@@ -3,7 +3,7 @@ from tkinter import messagebox
 import json
 import os
 
-ARCHIVO_USUARIOS = "usuarios.json"
+ARCHIVO_USUARIOS = "datos/usuarios.json"
 
 def cargar_usuarios():
     """Carga los usuarios desde el archivo JSON con manejo de excepciones"""
@@ -109,7 +109,7 @@ def pantalla_registro():
 
     def volver_al_login():
         root_registro.destroy()
-        from login import pantalla_login
+        from Vista.login import pantalla_login
         pantalla_login()
     
     # --- CONFIGURACIÓN DE LA VENTANA ---
