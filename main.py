@@ -1,7 +1,9 @@
 import tkinter as tk
-from Vista import login
-from Vista import registro
+from presentacion import login
+from presentacion import registro
 import os
+# Importamos Pillow para soportar formatos .jpg de manera limpia
+from PIL import Image, ImageTk 
 
 def pantalla_principal():
     # Creación de la ventana principal
@@ -19,23 +21,33 @@ def pantalla_principal():
 
     # --- CONTENEDOR PARA LOGO E INFORMACIÓN ---
     carpeta_actual = os.path.dirname(os.path.abspath(__file__))
-    ruta_logo = os.path.join(carpeta_actual, "logo.jpg") 
+    # CORRECCIÓN 1: La ruta ahora apunta correctamente adentro de "presentacion"
+    ruta_logo = os.path.join(carpeta_actual, "presentacion", "logo.jpg") 
     
     imagen_logo = None 
     
-    # 1. Zona del Logo (Reducido dinámicamente)
+    # 1. Zona del Logo (Carga y reajuste con Pillow)
     if os.path.exists(ruta_logo):
         try:
-            # Cargamos la imagen original
-            imagen_original = tk.PhotoImage(file=ruta_logo)
+            # CORRECCIÓN 2: Abrimos el .jpg usando Pillow
+            img_original = Image.open(ruta_logo)
             
-            # .subsample(2, 2) reduce la imagen a la mitad pixel por pixel de forma limpia
-            imagen_logo = imagen_original.subsample(2, 2)
+            # Redimensionamos la imagen de forma limpia a un tamaño ideal para el menú (ejm: 130x130)
+            img_redimensionada = img_original.resize((130, 130), Image.Resampling.LANCZOS)
+            
+            # Convertimos al formato compatible con Tkinter
+            imagen_logo = ImageTk.PhotoImage(img_redimensionada)
             
             lbl_logo = tk.Label(root_principal, image=imagen_logo, bg=COLOR_FONDO)
             lbl_logo.pack(pady=(30, 5)) # Margen superior moderado
+            
+            # CORRECCIÓN 3: Anclamos la referencia en el mismo Label para evitar el Garbage Collector
+            lbl_logo.image = imagen_logo 
+            
         except Exception as e:
-            print(f"Nota: No se pudo procesar o achicar el logo: {e}")
+            print(f"Nota: No se pudo procesar o achicar el logo con Pillow: {e}")
+    else:
+        print(f"Advertencia: No se encontró el archivo del logo en: {ruta_logo}")
 
     # 2. Textos Institucionales
     tk.Label(
@@ -61,6 +73,7 @@ def pantalla_principal():
 
     def abrir_registro():
         root_principal.destroy()
+        root_principal.quit()
         registro.pantalla_registro()
 
     # --- BOTONES INTERACTIVOS ---
@@ -96,7 +109,7 @@ def pantalla_principal():
     separador = tk.Frame(root_principal, height=1, bg="#eaeded", width=360)
     separador.pack(pady=20)
 
-    # Botón SALIR (Ya visible en pantalla)
+    # Botón SALIR
     btn_salir = tk.Button(
         root_principal,
         text="Salir del Sistema",
@@ -111,7 +124,7 @@ def pantalla_principal():
     )
     btn_salir.pack(pady=(0, 20))
 
-    # Mantener la referencia en la RAM para que Tkinter no borre la imagen modificada
+    # Guardamos también la referencia global en la raíz por seguridad
     root_principal.imagen_logo = imagen_logo
     root_principal.mainloop()
 

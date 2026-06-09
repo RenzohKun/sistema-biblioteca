@@ -1,10 +1,18 @@
 {
-    "lomas turbas": {
-        "clave": "energia12",
+    "admin": {
+        "clave": "1234",
+        "rol": "admin"
+    },
+    "cetace1234": {
+        "clave": "12345",
+        "rol": "estudiante"
+    },
+    "elias pacheco": {
+        "clave": "12345",
         "rol": "estudiante",
-        "cedula": "1302300671",
+        "cedula": "1315641116",
         "nombre": "Estudiante ULEAM Autoverificado",
-        "correo": "elvergalarga@gmail.com",
-        "telefono": "0939456708"
+        "correo": "e1315641116@live.uleam.edu.ec",
+        "telefono": "0967241166"
     }
 }
