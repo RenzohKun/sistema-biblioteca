@@ -1,18 +1,35 @@
 {
-    "admin": {
-        "clave": "1234",
-        "rol": "admin"
-    },
-    "cetace1234": {
-        "clave": "12345",
-        "rol": "estudiante"
-    },
-    "elias pacheco": {
-        "clave": "12345",
-        "rol": "estudiante",
-        "cedula": "1315641116",
-        "nombre": "Estudiante ULEAM Autoverificado",
-        "correo": "e1315641116@live.uleam.edu.ec",
-        "telefono": "0967241166"
-    }
+  "admin": {
+    "clave": "1234",
+    "rol": "admin"
+  },
+  "cetace1234": {
+    "clave": "12345",
+    "rol": "bibliotecario",
+    "nombre": "Elias Pacheco"
+  },
+  "elias pacheco": {
+    "clave": "12345",
+    "rol": "estudiante",
+    "cedula": "1315641116",
+    "nombre": "Estudiante ULEAM Autoverificado",
+    "correo": "e1315641116@live.uleam.edu.ec",
+    "telefono": "0967241166"
+  },
+  "cetace12": {
+    "clave": "Cetace12",
+    "rol": "admin",
+    "cedula": "1305678990",
+    "nombre": "Administrador del Sistema",
+    "correo": "jose.andres@uleam.edu.ec",
+    "telefono": "0998764532"
+  },
+  "admin2": {
+    "clave": "12345",
+    "rol": "admin",
+    "cedula": "132456785",
+    "nombre": "Administrador del Sistema",
+    "correo": "test@live.uleam.edu.ec",
+    "telefono": "2322323232323"
+  }
 }

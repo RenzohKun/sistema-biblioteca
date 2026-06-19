@@ -12,6 +12,9 @@ Este es un proyecto universitario desarrollado en **Python** que permite gestion
 * **Librería de Interfaz:** Tkinter
 * **Control de Versiones:** Git & GitHub
 
+## Clave maestra
+* **clave maestra** CLAVE_MAESTRA_ADMIN = "ULEAM_ADMIN_2026"
+
 ## 👤 N# Integrantes
 * 5
 ---
