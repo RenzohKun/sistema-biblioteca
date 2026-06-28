@@ -157,7 +157,7 @@ def pantalla_principal(posicion_actual=None):
     # Navegación
     def abrir_login():
         x, y = _pos(root)
-        root.destroy()
+        root.withdraw()
         login.pantalla_login(posicion_actual=(x, y))
 
     def abrir_registro():

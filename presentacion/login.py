@@ -272,7 +272,7 @@ def pantalla_login(posicion_actual=None):
 
         x = root.winfo_x()
         y = root.winfo_y()
-        root.destroy()
+        root.withdraw()
 
         # ✅ Navegar según el rol — 4 roles posibles: admin, bibliotecario, usuario, invitado
         if rol == "admin":
@@ -302,14 +302,14 @@ def pantalla_login(posicion_actual=None):
                     "Se mostrará el menú de usuario mientras tanto."
                 )
                 try:
-                    from presentacion.menu_usuario import pantalla_usuario
+                    from logica.menu_usuario import pantalla_usuario
                     pantalla_usuario(usuario=usuario, posicion_actual=(x, y))
                 except ImportError as e:
                     messagebox.showerror("Error de importación", f"No se pudo cargar el menú de usuario:\n{e}")
 
         else:  # "usuario" o "invitado"
             try:
-                from presentacion.menu_usuario import pantalla_usuario
+                from logica.menu_usuario import pantalla_usuario
                 pantalla_usuario(usuario=usuario, posicion_actual=(x, y))
             except ImportError as e:
                 messagebox.showerror("Error de importación", f"No se pudo cargar el menú de usuario:\n{e}")

@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, font as tkfont
 import json
 import os
+import sys
 
 # =========================================================================
 # RUTAS — resueltas desde la raíz del proyecto, sin importar desde dónde
@@ -11,6 +12,12 @@ CARPETA_RAIZ        = os.path.dirname(os.path.dirname(os.path.abspath(__file__))
 CARPETA_DATOS       = os.path.join(CARPETA_RAIZ, "datos")
 ARCHIVO_LIBROS      = os.path.join(CARPETA_DATOS, "biblioteca_datos.json")
 ARCHIVO_USUARIOS    = os.path.join(CARPETA_DATOS, "usuarios.json")
+
+# ✅ Asegura que la raíz del proyecto esté en el path. Se necesita para poder
+# hacer "from main import pantalla_principal" al cerrar sesión, sin importar
+# si este archivo se abrió directamente o desde login.py.
+if CARPETA_RAIZ not in sys.path:
+    sys.path.insert(0, CARPETA_RAIZ)
 
 MAX_F, MAX_C = 5, 5
 lista_libros = []
@@ -727,9 +734,21 @@ class VentanaAdministrador:
         btn_cancelar.pack(fill="x")
 
     # ---------------------------------------------------------------
+    # ✅ CORREGIDO: antes intentaba usar una variable global "root" que no
+    # existe cuando este panel se abre desde login.py (solo existía si se
+    # ejecutaba Admin.py directo), lo cual provocaba un NameError.
+    # Ahora destruye esta ventana y abre limpiamente pantalla_principal()
+    # de main.py, igual que hace "Volver al menú principal" en login.py.
     def cerrar_sesion(self):
         if messagebox.askyesno("Cerrar sesión", "¿Estás seguro de que quieres salir?"):
+            x = self.root.winfo_x()
+            y = self.root.winfo_y()
             self.root.destroy()
+            try:
+                from main import pantalla_principal
+                pantalla_principal(posicion_actual=(x, y))
+            except ImportError as e:
+                messagebox.showerror("Error de importación", f"No se pudo regresar al menú principal:\n{e}")
 
 
 # =========================================================================

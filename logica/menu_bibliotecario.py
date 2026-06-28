@@ -21,9 +21,7 @@ from presentacion.Admin import (
     C,
 )
 
-# Módulo nuevo: préstamos y reservas (no existía antes; ver Prestamos.py)
-# ✅ CORREGIDO: Prestamos.py vive en la carpeta "logica" (junto a este archivo),
-# no en "presentacion".
+# Módulo de préstamos y reservas, vive en la carpeta "logica" junto a este archivo.
 from logica import Prestamos as PR
 
 
@@ -730,16 +728,16 @@ class VentanaBibliotecario(VentanaAdministrador):
     # _estilizar_treeview se heredan tal cual de VentanaAdministrador — el
     # bibliotecario tiene exactamente las mismas funciones de catálogo que el admin.
     #
+    # ✅ "cerrar_sesion" también se hereda ahora de VentanaAdministrador (ya no se
+    # sobreescribe aquí): regresa correctamente a pantalla_principal() de main.py
+    # en vez de simplemente destruir la ventana.
+    #
     # Los métodos de gestión de usuarios (mostrar_gestion_usuarios,
     # editar_usuario_seleccionado, eliminar_usuario_seleccionado,
     # _abrir_modal_editar_usuario) también se heredan por simplicidad de código,
     # pero NO son alcanzables desde la interfaz: no existe ningún botón de menú
     # que los invoque (se omitió deliberadamente "Gestión de Usuarios" del
     # menú lateral). Quedan inertes — no representan una vía de acceso real.
-
-    def cerrar_sesion(self):
-        if messagebox.askyesno("Cerrar sesión", "¿Estás seguro de que quieres salir?"):
-            self.root.destroy()
 
 
 def pantalla_bibliotecario(usuario, posicion_actual=None, nombre=None):
