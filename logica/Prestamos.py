@@ -223,3 +223,22 @@ def rechazar_reserva(indice):
     lista_reservas[indice]["estado"] = "rechazada"
     guardar_reservas()
     return lista_reservas[indice]
+
+
+# =========================================================================
+# CONSULTAS POR USUARIO — usadas por el panel de estudiante/invitado
+# =========================================================================
+def prestamos_de_usuario(nombre_usuario):
+    """Devuelve la lista de préstamos activos o vencidos de un usuario."""
+    return [p for p in lista_prestamos
+            if p["usuario"] == nombre_usuario and p["estado"] in ("activo", "vencido")]
+
+
+def contar_prestamos_activos_usuario(nombre_usuario):
+    """Cantidad de libros que el usuario tiene actualmente en su poder."""
+    return len(prestamos_de_usuario(nombre_usuario))
+
+
+def historial_usuario(nombre_usuario):
+    """Todos los préstamos del usuario (activos, vencidos y devueltos)."""
+    return [p for p in lista_prestamos if p["usuario"] == nombre_usuario]

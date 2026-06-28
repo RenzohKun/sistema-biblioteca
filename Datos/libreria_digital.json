@@ -1,0 +1,44 @@
+[
+  {
+    "titulo": "Introducción a la Programación con Python",
+    "autor": "John Zelle",
+    "categoria": "Programación",
+    "url": "https://docs.python.org/3/tutorial/",
+    "descripcion": "Tutorial oficial de Python, ideal para principiantes en programación."
+  },
+  {
+    "titulo": "Fundamentos de Bases de Datos",
+    "autor": "Abraham Silberschatz",
+    "categoria": "Bases de Datos",
+    "url": "https://db-book.com/",
+    "descripcion": "Conceptos fundamentales de diseño y gestión de bases de datos relacionales."
+  },
+  {
+    "titulo": "Estructura de Datos y Algoritmos",
+    "autor": "Thomas H. Cormen",
+    "categoria": "Algoritmos",
+    "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/",
+    "descripcion": "Referencia clásica sobre algoritmos, complejidad y estructuras de datos."
+  },
+  {
+    "titulo": "Redes de Computadoras",
+    "autor": "Andrew S. Tanenbaum",
+    "categoria": "Redes",
+    "url": "https://www.pearson.com/en-us/subject-catalog/p/computer-networks/P200000003185",
+    "descripcion": "Texto fundamental sobre arquitectura y protocolos de redes."
+  },
+  {
+    "titulo": "Ingeniería de Software",
+    "autor": "Ian Sommerville",
+    "categoria": "Ingeniería de Software",
+    "url": "https://software-engineering-book.com/",
+    "descripcion": "Principios y prácticas modernas de ingeniería de software."
+  },
+  {
+    "titulo": "Matemáticas Discretas y sus Aplicaciones",
+    "autor": "Kenneth H. Rosen",
+    "categoria": "Matemáticas",
+    "url": "https://www.mheducation.com/highered/product/discrete-mathematics-applications-rosen/M9781259676512.html",
+    "descripcion": "Lógica, conjuntos, grafos y combinatoria aplicados a la computación."
+  }
+]

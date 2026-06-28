@@ -379,7 +379,8 @@ class VentanaBibliotecario(VentanaAdministrador):
         frame_botones.pack(padx=32, pady=(0, 14), fill="x")
 
         self._boton_accion(frame_botones, "📕  Registrar préstamo", C["verde"], C["verde_hover"], self._abrir_modal_prestamo).pack(side="left", padx=(0, 10))
-        self._boton_accion(frame_botones, "📗  Registrar devolución", C["azul_dato"], C["azul_dato_hover"], self._abrir_modal_devolucion).pack(side="left")
+        self._boton_accion(frame_botones, "📗  Registrar devolución", C["azul_dato"], C["azul_dato_hover"], self._abrir_modal_devolucion).pack(side="left", padx=(0, 10))
+        self._boton_accion(frame_botones, "⚠  Penalizar (Strike)", C["rojo"], C["rojo_hover"], self._abrir_modal_strike).pack(side="left")
 
         # --- Filtro de estado ---
         frame_filtro = tk.Frame(self.area_contenido, bg=C["fondo"])
@@ -530,6 +531,44 @@ class VentanaBibliotecario(VentanaAdministrador):
             self.mostrar_prestamos()
 
         self._botones_modal(inner, "Registrar devolución", C["azul_dato"], C["azul_dato_hover"], confirmar, modal.destroy)
+
+    def _abrir_modal_strike(self):
+        """Modal para penalizar a un usuario manualmente por daños, pérdida o atraso grave."""
+        modal = self._crear_modal_base("Penalizar usuario", 360, 220)
+        inner = modal.inner
+
+        tk.Label(inner, text="Nombre de usuario (login)", font=("Segoe UI", 9, "bold"), bg=C["fondo"], fg=C["texto_muted"]).pack(anchor="w")
+        ent_usuario = tk.Entry(inner, font=("Segoe UI", 10), relief="flat", highlightthickness=1, highlightbackground=C["borde"])
+        ent_usuario.pack(fill="x", ipady=5, pady=(2, 16))
+
+        lbl_estado = tk.Label(inner, text="", font=("Segoe UI", 8), bg=C["fondo"], fg=C["rojo"], wraplength=300, justify="left")
+        lbl_estado.pack(anchor="w", pady=(0, 8))
+
+        def confirmar():
+            from presentacion.Admin import cargar_usuarios, guardar_usuarios
+            usr = ent_usuario.get().strip()
+
+            if not usr:
+                lbl_estado.config(text="⚠ Escribe el nombre de usuario.")
+                return
+
+            usuarios = cargar_usuarios()
+            if usr not in usuarios:
+                lbl_estado.config(text=f"⚠ El usuario '{usr}' no existe.")
+                return
+
+            # Agregar strike
+            datos = usuarios[usr]
+            strikes_actuales = datos.get("strikes", 0)
+            datos["strikes"] = strikes_actuales + 1
+            usuarios[usr] = datos
+            guardar_usuarios(usuarios)
+            
+            messagebox.showinfo("Penalización aplicada", f"Se ha añadido 1 strike al usuario '{usr}'.\nStrikes totales: {datos['strikes']}")
+            modal.destroy()
+            self.mostrar_inicio()
+
+        self._botones_modal(inner, "Aplicar Strike", C["rojo"], C["rojo_hover"], confirmar, modal.destroy)
 
     # =========================================================================
     # VISTA: RESERVAS

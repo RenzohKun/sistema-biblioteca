@@ -14,7 +14,10 @@
         "cedula": "1315641116",
         "nombre": "Estudiante ULEAM Autoverificado",
         "correo": "e1315641116@live.uleam.edu.ec",
-        "telefono": "0967241166"
+        "telefono": "0967241166",
+        "strikes": 0,
+        "deuda": 0.0,
+        "suspendido_hasta": null
     },
     "admin2": {
         "clave": "12345",
@@ -31,5 +34,16 @@
         "nombre": "Administrador del Sistema",
         "correo": "maria.velez@uleam.edu.ec",
         "telefono": "6767676767676767"
+    },
+    "eso tilin": {
+        "clave": "1234",
+        "rol": "invitado",
+        "cedula": "13245678943",
+        "nombre": "Juan Fernandez",
+        "correo": "cetace1234@gmail.com",
+        "telefono": "00000000000000",
+        "strikes": 0,
+        "deuda": 0.0,
+        "suspendido_hasta": null
     }
 }
