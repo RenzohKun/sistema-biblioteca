@@ -115,6 +115,12 @@ def _cargar_libreria_digital():
         return []
 
 
+def _digitos_y_mas(event):
+    """Permite dígitos y el signo + (para prefijos internacionales como +593)."""
+    if event.char and event.char.isprintable() and not event.char.isdigit() and event.char != '+':
+        return "break"
+
+
 def _obtener_datos_usuario(usuario_login):
     """Lee los datos del usuario actual y garantiza que existan los campos
     de strikes/deuda/suspensión (los agrega si faltan, para compatibilidad
@@ -1087,6 +1093,7 @@ class VentanaUsuario:
                                        highlightthickness=1, highlightbackground=C["borde"])
         self.ent_perfil_tel.insert(0, datos.get("telefono", ""))
         self.ent_perfil_tel.pack(fill="x", ipady=5)
+        self.ent_perfil_tel.bind("<KeyPress>", _digitos_y_mas)
 
         # Nueva contraseña
         col_pass = tk.Frame(fila_tel_pass, bg=C["tarjeta"])
