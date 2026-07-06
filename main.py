@@ -86,7 +86,7 @@ def pantalla_principal(posicion_actual=None):
     if os.path.exists(ruta_logo):
         try:
             img = Image.open(ruta_logo).resize((160, 160), Image.Resampling.LANCZOS)
-            foto = ImageTk.PhotoImage(img)
+            foto = ImageTk.PhotoImage(image=img, master=root)
 
             # Marco con borde dorado simulado
             marco = tk.Frame(
@@ -150,7 +150,7 @@ def pantalla_principal(posicion_actual=None):
     # ---- BOTONES DE ACCESO ----
     def abrir_login():
         x, y = _pos(root)
-        root.withdraw()
+        root.destroy()
         login.pantalla_login(posicion_actual=(x, y))
 
     def abrir_registro():

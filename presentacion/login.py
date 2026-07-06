@@ -275,7 +275,7 @@ def pantalla_login(posicion_actual=None):
 
         x = root.winfo_x()
         y = root.winfo_y()
-        root.withdraw()
+        root.destroy()
 
         # ✅ Navegar según el rol — 4 roles posibles: admin, bibliotecario, usuario, invitado
         if rol == "admin":
@@ -340,9 +340,9 @@ def pantalla_login(posicion_actual=None):
     btn_registro.config(command=ir_a_registro)
     btn_volver.config(command=volver_al_menu)
 
-    # Enter en cualquier campo dispara el login
-    ent_usuario.bind("<Return>", ejecutar_login)
-    ent_contra.bind("<Return>",  ejecutar_login)
+    # Enter navega al siguiente campo y luego dispara el login
+    ent_usuario.bind("<Return>", lambda e: ent_contra.focus_set())
+    ent_contra.bind("<Return>",  lambda e: ejecutar_login())
 
     root.mainloop()
 

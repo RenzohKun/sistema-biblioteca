@@ -143,6 +143,18 @@ def get_valor(entry):
     return "" if val == getattr(entry, "_placeholder", None) else val
 
 
+def _solo_digitos(event):
+    """Bloquea cualquier carácter que no sea un dígito (0-9)."""
+    if event.char and event.char.isprintable() and not event.char.isdigit():
+        return "break"
+
+
+def _digitos_y_mas(event):
+    """Permite dígitos y el signo + (para prefijos internacionales como +593)."""
+    if event.char and event.char.isprintable() and not event.char.isdigit() and event.char != '+':
+        return "break"
+
+
 # ======================================================
 # 🖥️ PANTALLA PRINCIPAL
 # ======================================================
@@ -269,12 +281,14 @@ def pantalla_registro(posicion_actual=None):
     tk.Label(col_ced, text="Cédula / Pasaporte", font=("Segoe UI", 9, "bold"),
              fg=C["texto_label"], bg=C["tarjeta"]).pack(anchor="w", pady=(10, 3))
     _, ent_cedula = crear_campo(col_ced, "🪪", "1234567890")
+    ent_cedula.bind("<KeyPress>", _solo_digitos)
 
     col_tel = tk.Frame(fila_doc, bg=C["tarjeta"])
     col_tel.grid(row=0, column=1, sticky="ew", padx=(5, 0))
     tk.Label(col_tel, text="Teléfono", font=("Segoe UI", 9, "bold"),
              fg=C["texto_label"], bg=C["tarjeta"]).pack(anchor="w", pady=(10, 3))
     _, ent_telefono = crear_campo(col_tel, "📞", "+593...")
+    ent_telefono.bind("<KeyPress>", _digitos_y_mas)
 
     # Contraseñas (2 columnas)
     fila_pass = tk.Frame(padding, bg=C["tarjeta"])
@@ -296,34 +310,55 @@ def pantalla_registro(posicion_actual=None):
 
     # ---- PANEL ADMIN ----
     frame_admin_token = tk.Frame(
-        padding, bg=C["peligro_suave"],
-        highlightthickness=1, highlightbackground=C["peligro_borde"]
+        padding, bg=C["tarjeta"],
+        highlightthickness=1, highlightbackground=C["borde"]
     )
-    tk.Label(
+    lbl_token_titulo = tk.Label(
         frame_admin_token, text="🔑  Código de verificación admin",
-        font=("Segoe UI", 9, "bold"), fg=C["peligro"], bg=C["peligro_suave"]
-    ).pack(anchor="w", padx=12, pady=(10, 3))
+        font=("Segoe UI", 9, "bold"), fg=C["azul"], bg=C["tarjeta"]
+    )
+    lbl_token_titulo.pack(anchor="w", padx=12, pady=(10, 3))
 
     cont_token = tk.Frame(
-        frame_admin_token, bg=C["peligro_suave"],
-        highlightthickness=1, highlightbackground=C["peligro_borde"]
+        frame_admin_token, bg=C["tarjeta"],
+        highlightthickness=1, highlightbackground=C["borde"]
     )
     cont_token.pack(fill="x", padx=12, pady=(0, 4))
 
     ent_token_admin = tk.Entry(
         cont_token, show="●", font=("Segoe UI", 10),
-        bg=C["peligro_suave"], fg=C["peligro"],
-        bd=0, highlightthickness=0, insertbackground=C["peligro"]
+        bg=C["tarjeta"], fg=C["texto"],
+        bd=0, highlightthickness=0, insertbackground=C["azul"]
     )
     ent_token_admin.pack(fill="x", ipady=7, padx=8)
-    ent_token_admin.bind("<FocusIn>",  lambda e: cont_token.config(highlightbackground=C["peligro"]))
-    ent_token_admin.bind("<FocusOut>", lambda e: cont_token.config(highlightbackground=C["peligro_borde"]))
+    ent_token_admin.bind("<FocusIn>",  lambda e: cont_token.config(highlightbackground=C["borde_focus"]))
+    ent_token_admin.bind("<FocusOut>", lambda e: cont_token.config(highlightbackground=C["borde"]))
 
-    tk.Label(
+    lbl_token_nota = tk.Label(
         frame_admin_token,
         text="Requiere clave maestra provista por soporte técnico",
-        font=("Segoe UI", 8, "italic"), fg=C["peligro"], bg=C["peligro_suave"]
-    ).pack(anchor="w", padx=12, pady=(0, 10))
+        font=("Segoe UI", 8, "italic"), fg=C["texto_muted"], bg=C["tarjeta"]
+    )
+    lbl_token_nota.pack(anchor="w", padx=12, pady=(0, 10))
+
+    def _token_estado_normal():
+        """Restaura el panel del token a su estado neutral."""
+        frame_admin_token.config(bg=C["tarjeta"], highlightbackground=C["borde"])
+        lbl_token_titulo.config(fg=C["azul"], bg=C["tarjeta"])
+        cont_token.config(bg=C["tarjeta"], highlightbackground=C["borde"])
+        ent_token_admin.config(bg=C["tarjeta"], fg=C["texto"], insertbackground=C["azul"])
+        lbl_token_nota.config(fg=C["texto_muted"], bg=C["tarjeta"])
+
+    def _token_estado_error():
+        """Pone el panel del token en rojo cuando el código es incorrecto."""
+        frame_admin_token.config(bg=C["peligro_suave"], highlightbackground=C["peligro_borde"])
+        lbl_token_titulo.config(fg=C["peligro"], bg=C["peligro_suave"])
+        cont_token.config(bg=C["peligro_suave"], highlightbackground=C["peligro"])
+        ent_token_admin.config(bg=C["peligro_suave"], fg=C["peligro"], insertbackground=C["peligro"])
+        lbl_token_nota.config(fg=C["peligro"], bg=C["peligro_suave"])
+
+    # Al escribir, restaurar el color normal (quitar alerta de error anterior)
+    ent_token_admin.bind("<KeyRelease>", lambda e: _token_estado_normal())
 
     # ---- PANEL INVITADO ----
     frame_invitado = tk.Frame(padding, bg=C["tarjeta"])
@@ -470,6 +505,7 @@ def pantalla_registro(posicion_actual=None):
 
         if tipo == "admin":
             if ent_token_admin.get().strip() != CLAVE_MAESTRA_ADMIN:
+                _token_estado_error()
                 messagebox.showerror("Código incorrecto", "El código de verificación de administrador es incorrecto.")
                 return
             rol = "admin"
@@ -509,6 +545,25 @@ def pantalla_registro(posicion_actual=None):
 
     btn_registrar.config(command=registrar_usuario)
     btn_volver.config(command=volver_al_login)
+
+    # Navegación con tecla Enter
+    def _next_after_pass_conf(e):
+        if var_tipo.get() == "admin":
+            ent_token_admin.focus_set()
+        elif frame_invitado.winfo_ismapped():
+            ent_nombre.focus_set()
+        else:
+            registrar_usuario()
+
+    ent_user.bind("<Return>", lambda e: ent_correo.focus_set())
+    ent_correo.bind("<Return>", lambda e: ent_cedula.focus_set())
+    ent_cedula.bind("<Return>", lambda e: ent_telefono.focus_set())
+    ent_telefono.bind("<Return>", lambda e: ent_pass.focus_set())
+    ent_pass.bind("<Return>", lambda e: ent_pass_conf.focus_set())
+    ent_pass_conf.bind("<Return>", _next_after_pass_conf)
+    ent_token_admin.bind("<Return>", lambda e: registrar_usuario())
+    ent_nombre.bind("<Return>", lambda e: ent_apellido.focus_set())
+    ent_apellido.bind("<Return>", lambda e: registrar_usuario())
 
     root.mainloop()
 
