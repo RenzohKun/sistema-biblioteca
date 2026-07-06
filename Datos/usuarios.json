@@ -1,7 +1,11 @@
 {
     "admin": {
         "clave": "1234",
-        "rol": "admin"
+        "rol": "admin",
+        "cedula": "0000000000",
+        "nombre": "Administrador General",
+        "correo": "admin@uleam.edu.ec",
+        "telefono": "0000000000"
     },
     "cetace1234": {
         "clave": "12345",
@@ -45,11 +49,6 @@
         "nombre": "Juan Fernandez",
         "correo": "cetace1234@gmail.com",
         "telefono": "00000000000000",
-        "strikes": 0,
-        "deuda": 0.0,
-        "suspendido_hasta": null
-    },
-    "test": {
         "strikes": 0,
         "deuda": 0.0,
         "suspendido_hasta": null

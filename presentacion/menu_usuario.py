@@ -24,7 +24,7 @@ ARCHIVO_LIBRERIA_DIGITAL = os.path.join(CARPETA_DATOS, "libreria_digital.json")
 if CARPETA_RAIZ not in sys.path:
     sys.path.insert(0, CARPETA_RAIZ)
 
-from presentacion.Admin import (
+from presentacion.admin import (
     cargar_desde_archivo,
     lista_libros,
     estanteria,
@@ -33,7 +33,7 @@ from presentacion.Admin import (
     buscar_recursivo,
     C,  # paleta de colores marino/dorado
 )
-from logica import Prestamos as PR
+from logica import prestamos as PR
 
 # =========================================================================
 # PORTADAS — mapeo de categoría a archivo de imagen

@@ -280,7 +280,7 @@ def pantalla_login(posicion_actual=None):
         # ✅ Navegar según el rol — 4 roles posibles: admin, bibliotecario, usuario, invitado
         if rol == "admin":
             try:
-                from presentacion.Admin import VentanaAdministrador
+                from presentacion.admin import VentanaAdministrador
                 root_admin = tk.Tk()
                 root_admin.geometry(f"+{x}+{y}")
                 # Se pasa usuario_login explícitamente para que el panel sepa con certeza
@@ -294,9 +294,7 @@ def pantalla_login(posicion_actual=None):
             try:
                 # Pantalla dedicada para bibliotecario (gestión de libros, sin acceso
                 # a usuarios ni roles).
-                # ✅ CORREGIDO: menu_bibliotecario.py vive en la carpeta "logica",
-                # no en "presentacion".
-                from logica.menu_bibliotecario import pantalla_bibliotecario
+                from presentacion.menu_bibliotecario import pantalla_bibliotecario
                 pantalla_bibliotecario(usuario=usuario, posicion_actual=(x, y), nombre=nombre)
             except ImportError:
                 messagebox.showinfo(
@@ -305,14 +303,14 @@ def pantalla_login(posicion_actual=None):
                     "Se mostrará el menú de usuario mientras tanto."
                 )
                 try:
-                    from logica.menu_usuario import pantalla_usuario
+                    from presentacion.menu_usuario import pantalla_usuario
                     pantalla_usuario(usuario=usuario, posicion_actual=(x, y))
                 except ImportError as e:
                     messagebox.showerror("Error de importación", f"No se pudo cargar el menú de usuario:\n{e}")
 
         else:  # "usuario" o "invitado"
             try:
-                from logica.menu_usuario import pantalla_usuario
+                from presentacion.menu_usuario import pantalla_usuario
                 pantalla_usuario(usuario=usuario, posicion_actual=(x, y))
             except ImportError as e:
                 messagebox.showerror("Error de importación", f"No se pudo cargar el menú de usuario:\n{e}")

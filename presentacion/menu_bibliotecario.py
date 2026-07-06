@@ -75,7 +75,7 @@ def _foto_portada_cat(categoria, ancho=120, alto=160):
 # Reutilizamos toda la lógica de datos, paleta y estilo ya construida para el
 # panel de administrador: cargar/guardar libros, búsqueda recursiva, estilos
 # de Treeview, etc. El bibliotecario es una versión recortada del mismo panel.
-from presentacion.Admin import (
+from presentacion.admin import (
     VentanaAdministrador,
     cargar_desde_archivo,
     buscar_recursivo,
@@ -83,7 +83,7 @@ from presentacion.Admin import (
 )
 
 # Módulo de préstamos y reservas, vive en la carpeta "logica" junto a este archivo.
-from logica import Prestamos as PR
+from logica import prestamos as PR
 
 
 class VentanaBibliotecario(VentanaAdministrador):
@@ -186,7 +186,7 @@ class VentanaBibliotecario(VentanaAdministrador):
     # buscador global y actividad reciente
     # =========================================================================
     def mostrar_inicio(self):
-        from presentacion.Admin import lista_libros, estanteria, MAX_F, MAX_C
+        from presentacion.admin import lista_libros, estanteria, MAX_F, MAX_C
 
         self.limpiar_contenido()
         self._encabezado("Panel de control", "Estado actual del catálogo de la biblioteca")
@@ -283,7 +283,6 @@ class VentanaBibliotecario(VentanaAdministrador):
             highlightthickness=0, bd=0
         )
         self.ent_busqueda_global.pack(side="left", fill="x", expand=True, ipady=4)
-        self.ent_busqueda_global.insert(0, "")
         self.ent_busqueda_global.bind("<Return>", lambda e: self._ejecutar_busqueda_global())
 
         placeholder = "Buscar libro por ID o título..."
@@ -311,7 +310,7 @@ class VentanaBibliotecario(VentanaAdministrador):
         btn_buscar.pack(side="right")
 
     def _ejecutar_busqueda_global(self):
-        from presentacion.Admin import lista_libros
+        from presentacion.admin import lista_libros
 
         texto = self.ent_busqueda_global.get().strip()
         if not texto or texto == "Buscar libro por ID o título...":
@@ -402,7 +401,7 @@ class VentanaBibliotecario(VentanaAdministrador):
             ).pack(anchor="w")
             return
 
-        from presentacion.Admin import lista_libros
+        from presentacion.admin import lista_libros
         titulos_por_id = {lib["id"]: lib["titulo"] for lib in lista_libros}
 
         for i, ev in enumerate(eventos):
@@ -504,7 +503,7 @@ class VentanaBibliotecario(VentanaAdministrador):
             self._abrir_modal_devolucion()
 
     def _actualizar_tabla_prestamos(self):
-        from presentacion.Admin import lista_libros
+        from presentacion.admin import lista_libros
         titulos_por_id = {lib["id"]: lib["titulo"] for lib in lista_libros}
 
         for fila in self.tabla_prestamos.get_children():
@@ -524,7 +523,7 @@ class VentanaBibliotecario(VentanaAdministrador):
     def _abrir_modal_prestamo(self):
         """Modal compacto para registrar un préstamo: ID del libro + nombre
         del lector. Valida que el libro exista y no esté ya prestado."""
-        from presentacion.Admin import lista_libros, id_existe
+        from presentacion.admin import lista_libros, id_existe
 
         modal = self._crear_modal_base("Registrar préstamo", 360, 280)
         inner = modal.inner
@@ -578,7 +577,7 @@ class VentanaBibliotecario(VentanaAdministrador):
         lbl_estado.pack(anchor="w", pady=(0, 8))
 
         def confirmar():
-            from presentacion.Admin import lista_libros
+            from presentacion.admin import lista_libros
             id_lib = ent_id.get().strip()
 
             if not id_lib:
@@ -611,7 +610,7 @@ class VentanaBibliotecario(VentanaAdministrador):
         lbl_estado.pack(anchor="w", pady=(0, 8))
 
         def confirmar():
-            from presentacion.Admin import cargar_usuarios, guardar_usuarios
+            from presentacion.admin import cargar_usuarios, guardar_usuarios
             usr = ent_usuario.get().strip()
 
             if not usr:
@@ -685,7 +684,7 @@ class VentanaBibliotecario(VentanaAdministrador):
         self._actualizar_tabla_reservas()
 
     def _actualizar_tabla_reservas(self):
-        from presentacion.Admin import lista_libros
+        from presentacion.admin import lista_libros
         titulos_por_id = {lib["id"]: lib["titulo"] for lib in lista_libros}
 
         for fila in self.tabla_reservas.get_children():
@@ -700,7 +699,7 @@ class VentanaBibliotecario(VentanaAdministrador):
             )
 
     def _abrir_modal_nueva_reserva(self):
-        from presentacion.Admin import lista_libros
+        from presentacion.admin import lista_libros
 
         modal = self._crear_modal_base("Nueva reserva", 360, 280)
         inner = modal.inner
