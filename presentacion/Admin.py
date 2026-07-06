@@ -3,6 +3,11 @@ from tkinter import ttk, messagebox, font as tkfont
 import json
 import os
 import sys
+try:
+    from PIL import Image, ImageTk
+    _PIL_OK = True
+except ImportError:
+    _PIL_OK = False
 
 # =========================================================================
 # RUTAS — resueltas desde la raíz del proyecto, sin importar desde dónde
@@ -10,6 +15,7 @@ import sys
 # =========================================================================
 CARPETA_RAIZ        = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CARPETA_DATOS       = os.path.join(CARPETA_RAIZ, "datos")
+CARPETA_PORTADAS    = os.path.join(CARPETA_DATOS, "portadas")
 ARCHIVO_LIBROS      = os.path.join(CARPETA_DATOS, "biblioteca_datos.json")
 ARCHIVO_USUARIOS    = os.path.join(CARPETA_DATOS, "usuarios.json")
 
@@ -18,6 +24,22 @@ ARCHIVO_USUARIOS    = os.path.join(CARPETA_DATOS, "usuarios.json")
 # si este archivo se abrió directamente o desde login.py.
 if CARPETA_RAIZ not in sys.path:
     sys.path.insert(0, CARPETA_RAIZ)
+
+# =========================================================================
+# PORTADA HELPER — carga la portada genérica de libro físico
+# =========================================================================
+def _foto_portada_fisica(ancho=160, alto=210):
+    """Devuelve ImageTk.PhotoImage con la portada default o None."""
+    if not _PIL_OK:
+        return None
+    ruta = os.path.join(CARPETA_PORTADAS, "portada_default.png")
+    if not os.path.exists(ruta):
+        return None
+    try:
+        img = Image.open(ruta).resize((ancho, alto), Image.Resampling.LANCZOS)
+        return ImageTk.PhotoImage(img)
+    except Exception:
+        return None
 
 MAX_F, MAX_C = 5, 5
 lista_libros = []
@@ -154,7 +176,11 @@ class VentanaAdministrador:
         self.root.title("Sistema de Biblioteca — Panel de Administración")
         self.root.configure(bg=C["fondo"])
         self.root.geometry("1080x680")
-        self.root.resizable(False, False)
+        self.root.resizable(True, True)
+        self.root.update_idletasks()
+        sw = self.root.winfo_screenwidth()
+        sh = self.root.winfo_screenheight()
+        self.root.geometry(f"1080x680+{(sw-1080)//2}+{(sh-680)//2}")
 
         cargar_desde_archivo()
 
@@ -264,7 +290,7 @@ class VentanaAdministrador:
 
         frame_tarjetas = tk.Frame(self.area_contenido, bg=C["fondo"])
         frame_tarjetas.pack(padx=32, fill="x", anchor="w")
-        frame_tarjetas.grid_columnconfigure((0, 1, 2), weight=1, uniform="card")
+        frame_tarjetas.grid_columnconfigure((0, 1, 2), weight=1, uniform="card", minsize=140)
 
         usuarios = cargar_usuarios()
         total_estudiantes = sum(1 for u in usuarios.values() if u.get("rol") != "admin")
@@ -326,26 +352,30 @@ class VentanaAdministrador:
 
         inner_form = tk.Frame(frame_formulario, bg=C["tarjeta"])
         inner_form.pack(fill="x", padx=18, pady=16)
+        inner_form.columnconfigure(0, weight=1)
+        inner_form.columnconfigure(1, weight=3)
+        inner_form.columnconfigure(2, weight=1)
+        inner_form.columnconfigure(3, weight=1)
 
         tk.Label(inner_form, text="Registrar o buscar libro", font=self.f_label, bg=C["tarjeta"], fg=C["marino"]).grid(
             row=0, column=0, columnspan=4, sticky="w", pady=(0, 10)
         )
 
         tk.Label(inner_form, text="ID Libro", font=self.f_label, bg=C["tarjeta"], fg=C["texto_muted"]).grid(row=1, column=0, padx=(0, 6), sticky="w")
-        self.ent_id = tk.Entry(inner_form, width=12, relief="flat", highlightthickness=1, highlightbackground=C["borde"], font=("Segoe UI", 10))
-        self.ent_id.grid(row=2, column=0, padx=(0, 14), pady=(2, 8), sticky="w", ipady=4)
+        self.ent_id = tk.Entry(inner_form, relief="flat", highlightthickness=1, highlightbackground=C["borde"], font=("Segoe UI", 10))
+        self.ent_id.grid(row=2, column=0, padx=(0, 14), pady=(2, 8), sticky="ew", ipady=4)
 
         tk.Label(inner_form, text="Título", font=self.f_label, bg=C["tarjeta"], fg=C["texto_muted"]).grid(row=1, column=1, padx=(0, 6), sticky="w")
-        self.ent_titulo = tk.Entry(inner_form, width=30, relief="flat", highlightthickness=1, highlightbackground=C["borde"], font=("Segoe UI", 10))
-        self.ent_titulo.grid(row=2, column=1, padx=(0, 14), pady=(2, 8), sticky="w", ipady=4)
+        self.ent_titulo = tk.Entry(inner_form, relief="flat", highlightthickness=1, highlightbackground=C["borde"], font=("Segoe UI", 10))
+        self.ent_titulo.grid(row=2, column=1, padx=(0, 14), pady=(2, 8), sticky="ew", ipady=4)
 
         tk.Label(inner_form, text="Fila (0-4)", font=self.f_label, bg=C["tarjeta"], fg=C["texto_muted"]).grid(row=1, column=2, padx=(0, 6), sticky="w")
         self.ent_f = tk.Entry(inner_form, width=8, relief="flat", highlightthickness=1, highlightbackground=C["borde"], font=("Segoe UI", 10))
-        self.ent_f.grid(row=2, column=2, padx=(0, 14), pady=(2, 8), sticky="w", ipady=4)
+        self.ent_f.grid(row=2, column=2, padx=(0, 14), pady=(2, 8), sticky="ew", ipady=4)
 
         tk.Label(inner_form, text="Columna (0-4)", font=self.f_label, bg=C["tarjeta"], fg=C["texto_muted"]).grid(row=1, column=3, padx=(0, 6), sticky="w")
         self.ent_c = tk.Entry(inner_form, width=8, relief="flat", highlightthickness=1, highlightbackground=C["borde"], font=("Segoe UI", 10))
-        self.ent_c.grid(row=2, column=3, pady=(2, 8), sticky="w", ipady=4)
+        self.ent_c.grid(row=2, column=3, pady=(2, 8), sticky="ew", ipady=4)
 
         # --- Botones operativos ---
         frame_botones = tk.Frame(self.area_contenido, bg=C["fondo"])
@@ -355,9 +385,47 @@ class VentanaAdministrador:
         self._boton_accion(frame_botones, "🔍  Búsqueda recursiva", C["azul_dato"], C["azul_dato_hover"], self.ejecutar_busqueda_recursiva).pack(side="left", padx=(0, 10))
         self._boton_accion(frame_botones, "🗑  Remover del catálogo", C["rojo"], C["rojo_hover"], self.eliminar_libro_logica).pack(side="left")
 
-        # --- Tabla ---
-        frame_tabla = tk.Frame(self.area_contenido, bg=C["fondo"])
-        frame_tabla.pack(padx=32, pady=(0, 24), fill="both", expand=True)
+        # --- LAYOUT HORIZONTAL: tabla + panel detalle derecho ---
+        frame_cuerpo = tk.Frame(self.area_contenido, bg=C["fondo"])
+        frame_cuerpo.pack(padx=32, pady=(0, 24), fill="both", expand=True)
+
+        # --- PANEL DETALLE DERECHO CON PORTADA (va primero para reservar espacio) ---
+        panel_det = tk.Frame(frame_cuerpo, bg=C["tarjeta"],
+                             highlightthickness=1, highlightbackground=C["borde"],
+                             width=210)
+        panel_det.pack(side="right", fill="y", padx=(12, 0))
+        panel_det.pack_propagate(False)
+
+        self._foto_admin_libros = None
+        self._lbl_portada_admin = tk.Label(panel_det, bg=C["marino"])
+        self._lbl_portada_admin.pack(fill="x")
+
+        inner_det_admin = tk.Frame(panel_det, bg=C["tarjeta"])
+        inner_det_admin.pack(fill="both", expand=True, padx=10, pady=10)
+
+        self._lbl_adm_titulo = tk.Label(inner_det_admin, text="Selecciona un libro",
+                                         font=("Segoe UI", 9, "bold"),
+                                         bg=C["tarjeta"], fg=C["marino"],
+                                         wraplength=180, justify="left")
+        self._lbl_adm_titulo.pack(anchor="w", pady=(0, 4))
+        self._lbl_adm_id = tk.Label(inner_det_admin, text="", font=("Segoe UI", 8),
+                                    bg=C["tarjeta"], fg=C["texto_muted"])
+        self._lbl_adm_id.pack(anchor="w")
+        self._lbl_adm_ubic = tk.Label(inner_det_admin, text="", font=("Segoe UI", 8),
+                                      bg=C["tarjeta"], fg=C["texto_muted"])
+        self._lbl_adm_ubic.pack(anchor="w")
+
+        # Portada inicial (default)
+        foto0 = _foto_portada_fisica(ancho=190, alto=220)
+        if foto0:
+            self._foto_admin_libros = foto0
+            self._lbl_portada_admin.config(image=foto0)
+        else:
+            self._lbl_portada_admin.config(text="📖", font=("Segoe UI", 46), fg=C["acento"])
+
+        # Tabla (va después del panel para ocupar el espacio restante)
+        frame_tabla = tk.Frame(frame_cuerpo, bg=C["fondo"])
+        frame_tabla.pack(side="left", fill="both", expand=True)
 
         self._estilizar_treeview()
 
@@ -370,16 +438,35 @@ class VentanaAdministrador:
         self.tabla_libros.heading("columna", text="Columna")
 
         self.tabla_libros.column("id", width=110, anchor="center")
-        self.tabla_libros.column("titulo", width=340, anchor="w")
-        self.tabla_libros.column("fila", width=90, anchor="center")
-        self.tabla_libros.column("columna", width=90, anchor="center")
+        self.tabla_libros.column("titulo", width=280, anchor="w")
+        self.tabla_libros.column("fila", width=80, anchor="center")
+        self.tabla_libros.column("columna", width=80, anchor="center")
 
         scrollbar = ttk.Scrollbar(frame_tabla, orient="vertical", command=self.tabla_libros.yview)
         self.tabla_libros.configure(yscrollcommand=scrollbar.set)
         self.tabla_libros.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
+        def _al_seleccionar_libro(event):
+            sel = self.tabla_libros.selection()
+            if not sel:
+                return
+            vals = self.tabla_libros.item(sel[0], "values")
+            if not vals:
+                return
+            id_l, tit, f_, c_ = vals
+            self._lbl_adm_titulo.config(text=tit)
+            self._lbl_adm_id.config(text=f"ID: {id_l}")
+            self._lbl_adm_ubic.config(text=f"📂 Fila {f_}, Columna {c_}")
+            foto = _foto_portada_fisica(ancho=190, alto=220)
+            if foto:
+                self._foto_admin_libros = foto
+                self._lbl_portada_admin.config(image=foto, text="")
+
+        self.tabla_libros.bind("<<TreeviewSelect>>", _al_seleccionar_libro)
+
         self.actualizar_tabla_libros()
+
 
     def _estilizar_treeview(self):
         """Aplica estilo ttk consistente con la paleta marino/dorado."""
@@ -494,7 +581,7 @@ class VentanaAdministrador:
         self._leyenda(frame_leyenda, C["rojo"], "Ocupado")
 
         fr_matriz = tk.Frame(self.area_contenido, bg=C["tarjeta"], highlightthickness=1, highlightbackground=C["borde"])
-        fr_matriz.pack(padx=32, pady=(0, 24))
+        fr_matriz.pack(padx=32, pady=(0, 24), anchor="center")
 
         grid_inner = tk.Frame(fr_matriz, bg=C["tarjeta"])
         grid_inner.pack(padx=18, pady=18)
@@ -512,12 +599,13 @@ class VentanaAdministrador:
                     fg_color = C["rojo"]
                     texto_celda = f"ID: {contenido_celda}"
 
-                celda = tk.Frame(grid_inner, bg=bg_color, highlightthickness=1, highlightbackground=C["borde"], width=120, height=64)
+                celda = tk.Frame(grid_inner, bg=bg_color, highlightthickness=1, highlightbackground=C["borde"], width=130, height=70)
                 celda.grid(row=r, column=c, padx=4, pady=4)
                 celda.pack_propagate(False)
 
-                tk.Label(celda, text=f"[{r}][{c}]", font=("Segoe UI", 8), bg=bg_color, fg=C["texto_muted"]).pack(pady=(8, 0))
-                tk.Label(celda, text=texto_celda, font=("Segoe UI", 10, "bold"), bg=bg_color, fg=fg_color).pack()
+                tk.Label(celda, text=f"[{r}][{c}]", font=("Segoe UI", 8), bg=bg_color, fg=C["texto_muted"]).pack(pady=(8, 2))
+                tk.Label(celda, text=texto_celda, font=("Segoe UI", 9, "bold"), bg=bg_color, fg=fg_color,
+                         wraplength=120, justify="center").pack(padx=4)
 
     def _leyenda(self, parent, color, texto):
         wrap = tk.Frame(parent, bg=C["fondo"])
@@ -628,7 +716,7 @@ class VentanaAdministrador:
         modal = tk.Toplevel(self.root)
         modal.title(f"Editar usuario — {usuario_clave}")
         modal.configure(bg=C["fondo"])
-        modal.resizable(False, False)
+        modal.resizable(True, True)
         modal.transient(self.root)
         modal.grab_set()
 

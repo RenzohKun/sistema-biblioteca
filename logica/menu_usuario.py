@@ -1,22 +1,3 @@
-"""
-Panel de Usuario / Estudiante — Sistema de Biblioteca ULEAM
-
-Pantalla completa con menú lateral que ofrece 6 secciones:
-  🏠  Inicio / Mi Perfil        → Dashboard con indicadores (strikes, préstamos)
-  📚  Préstamo de Libros         → Solicitar libro físico (con validación de strikes)
-  🌐  Librería Digital           → Recursos en línea (siempre disponible)
-  🔍  Catálogo / Estantería      → Vista y búsqueda del catálogo completo
-  💬  Buzón de Sugerencias       → Comentarios de mejora para el administrador
-  ⚙️  Mi Cuenta                  → Edición de perfil (teléfono, contraseña, etc.)
-
-Reglas de negocio — Sistema de Strikes:
-  • Los strikes son aplicados por el administrador (ej. libros dañados, perdidos).
-  • 0-2 strikes: puede pedir libros normalmente
-  • 3 strikes: suspensión de préstamos por 7 días
-  • 4+ strikes: bloqueo permanente de préstamos físicos
-  • La librería digital NUNCA se bloquea
-"""
-
 import tkinter as tk
 from tkinter import ttk, messagebox, font as tkfont
 import json
@@ -24,12 +5,18 @@ import os
 import sys
 import webbrowser
 from datetime import datetime, timedelta
+try:
+    from PIL import Image, ImageTk
+    PIL_DISPONIBLE = True
+except ImportError:
+    PIL_DISPONIBLE = False
 
 # =========================================================================
 # RUTAS Y PATH
 # =========================================================================
 CARPETA_RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CARPETA_DATOS = os.path.join(CARPETA_RAIZ, "datos")
+CARPETA_PORTADAS = os.path.join(CARPETA_DATOS, "portadas")
 ARCHIVO_USUARIOS = os.path.join(CARPETA_DATOS, "usuarios.json")
 ARCHIVO_COMENTARIOS = os.path.join(CARPETA_DATOS, "comentarios.json")
 ARCHIVO_LIBRERIA_DIGITAL = os.path.join(CARPETA_DATOS, "libreria_digital.json")
@@ -48,10 +35,36 @@ from presentacion.Admin import (
 )
 from logica import Prestamos as PR
 
+# =========================================================================
+# PORTADAS — mapeo de categoría a archivo de imagen
+# =========================================================================
+_PORTADA_POR_CATEGORIA = {
+    "Programación":             "portada_programacion.png",
+    "Bases de Datos":           "portada_basesdatos.png",
+    "Algoritmos":               "portada_algoritmos.png",
+    "Redes":                    "portada_redes.png",
+    "Ingeniería de Software":   "portada_software.png",
+    "Matemáticas":             "portada_matematicas.png",
+}
 
-# =========================================================================
-# DATOS AUXILIARES
-# =========================================================================
+def _cargar_foto_portada(categoria=None, ancho=90, alto=120):
+    """Carga y redimensiona la portada según categoría. Devuelve ImageTk.PhotoImage
+    o None si PIL no está disponible."""
+    if not PIL_DISPONIBLE:
+        return None
+    nombre = _PORTADA_POR_CATEGORIA.get(categoria, "portada_default.png")
+    ruta = os.path.join(CARPETA_PORTADAS, nombre)
+    if not os.path.exists(ruta):
+        ruta = os.path.join(CARPETA_PORTADAS, "portada_default.png")
+    if not os.path.exists(ruta):
+        return None
+    try:
+        img = Image.open(ruta).resize((ancho, alto), Image.Resampling.LANCZOS)
+        return ImageTk.PhotoImage(img)
+    except Exception:
+        return None
+
+
 def _cargar_usuarios():
     if not os.path.exists(ARCHIVO_USUARIOS):
         return {}
@@ -159,7 +172,11 @@ class VentanaUsuario:
         self.root.title("Sistema de Biblioteca — Panel de Estudiante")
         self.root.configure(bg=C["fondo"])
         self.root.geometry("1080x680")
-        self.root.resizable(False, False)
+        self.root.resizable(True, True)
+        self.root.update_idletasks()
+        sw = self.root.winfo_screenwidth()
+        sh = self.root.winfo_screenheight()
+        self.root.geometry(f"1080x680+{(sw-1080)//2}+{(sh-680)//2}")
 
         cargar_desde_archivo()
         PR.cargar_prestamos()
@@ -323,7 +340,7 @@ class VentanaUsuario:
         # --- TARJETAS ---
         frame_tarjetas = tk.Frame(self.area_contenido, bg=C["fondo"])
         frame_tarjetas.pack(padx=32, fill="x", anchor="w")
-        frame_tarjetas.grid_columnconfigure((0, 1, 2), weight=1, uniform="card")
+        frame_tarjetas.grid_columnconfigure((0, 1, 2), weight=1, uniform="card", minsize=140)
 
         if self.es_invitado:
             self._tarjeta_dashboard(frame_tarjetas, 0, "📕", "LIBROS PRESTADOS", "0", C["texto_muted"])
@@ -363,8 +380,13 @@ class VentanaUsuario:
         inner_estado = tk.Frame(frame_estado, bg=C["tarjeta"])
         inner_estado.pack(fill="x", padx=18, pady=14)
 
-        tk.Label(inner_estado, text=motivo, font=self.f_subtitulo, bg=C["tarjeta"],
-                 fg=color_msg, wraplength=700, justify="left").pack(anchor="w")
+        lbl_motivo = tk.Label(inner_estado, text=motivo, font=self.f_subtitulo, bg=C["tarjeta"],
+                 fg=color_msg, wraplength=700, justify="left")
+        lbl_motivo.pack(anchor="w")
+        # Ajustar wraplength dinámicamente cuando la ventana cambia de tamaño
+        def _actualizar_wrap(e, lbl=lbl_motivo):
+            lbl.config(wraplength=max(200, e.width - 36))
+        inner_estado.bind("<Configure>", _actualizar_wrap)
 
         # --- ACCIONES RÁPIDAS ---
         tk.Label(
@@ -579,56 +601,109 @@ class VentanaUsuario:
         tk.Label(frame_info, text="🌐  La librería digital está siempre disponible, sin importar tu estado de cuenta.",
                  font=self.f_actividad, bg="#DBEAFE", fg="#1E40AF", wraplength=700, justify="left").pack(padx=16, pady=10, anchor="w")
 
-        # Tabla de recursos
-        frame_tabla = tk.Frame(self.area_contenido, bg=C["fondo"])
-        frame_tabla.pack(padx=32, pady=(16, 0), fill="both", expand=True)
+        # --- CONTENEDOR SCROLLABLE PARA EL GRID DE TARJETAS ---
+        frame_scroll_outer = tk.Frame(self.area_contenido, bg=C["fondo"])
+        frame_scroll_outer.pack(padx=32, pady=(14, 24), fill="both", expand=True)
 
-        self._estilizar_treeview()
-        columnas = ("titulo", "autor", "categoria", "descripcion")
-        self.tabla_digital = ttk.Treeview(frame_tabla, columns=columnas, show="headings",
-                                           height=12, style="Biblio.Treeview")
+        canvas_digital = tk.Canvas(frame_scroll_outer, bg=C["fondo"], bd=0, highlightthickness=0)
+        sb_digital = ttk.Scrollbar(frame_scroll_outer, orient="vertical", command=canvas_digital.yview)
+        canvas_digital.configure(yscrollcommand=sb_digital.set)
+        sb_digital.pack(side="right", fill="y")
+        canvas_digital.pack(side="left", fill="both", expand=True)
 
-        self.tabla_digital.heading("titulo", text="Título")
-        self.tabla_digital.heading("autor", text="Autor")
-        self.tabla_digital.heading("categoria", text="Categoría")
-        self.tabla_digital.heading("descripcion", text="Descripción")
+        frame_cards = tk.Frame(canvas_digital, bg=C["fondo"])
+        id_cards = canvas_digital.create_window((0, 0), window=frame_cards, anchor="nw")
 
-        self.tabla_digital.column("titulo", width=250, anchor="w")
-        self.tabla_digital.column("autor", width=160, anchor="w")
-        self.tabla_digital.column("categoria", width=130, anchor="center")
-        self.tabla_digital.column("descripcion", width=300, anchor="w")
+        canvas_digital.bind("<Configure>", lambda e: canvas_digital.itemconfig(id_cards, width=e.width))
+        frame_cards.bind("<Configure>", lambda e: canvas_digital.configure(scrollregion=canvas_digital.bbox("all")))
+        canvas_digital.bind_all("<MouseWheel>", lambda e: canvas_digital.yview_scroll(int(-1*(e.delta/120)), "units"))
 
-        scrollbar = ttk.Scrollbar(frame_tabla, orient="vertical", command=self.tabla_digital.yview)
-        self.tabla_digital.configure(yscrollcommand=scrollbar.set)
-        self.tabla_digital.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
+        # Colores de chip por categoría
+        colores_chip = {
+            "Programación":           ("#DBEAFE", "#1E40AF"),
+            "Bases de Datos":         ("#D1FAE5", "#065F46"),
+            "Algoritmos":             ("#FEF3C7", "#92400E"),
+            "Redes":                  ("#F3E8FF", "#6B21A8"),
+            "Ingeniería de Software": ("#FFE4E6", "#9F1239"),
+            "Matemáticas":           ("#E0F2FE", "#0C4A6E"),
+        }
 
         recursos = _cargar_libreria_digital()
+        self._fotos_digital = []   # Mantener referencias para evitar GC
+
+        COLS = 3  # tarjetas por fila
         for i, rec in enumerate(recursos):
-            self.tabla_digital.insert("", "end", iid=str(i),
-                                      values=(rec["titulo"], rec["autor"], rec["categoria"], rec["descripcion"]))
+            fila_grid  = i // COLS
+            col_grid   = i %  COLS
 
-        # Botón para abrir recurso seleccionado
-        frame_btn = tk.Frame(self.area_contenido, bg=C["fondo"])
-        frame_btn.pack(padx=32, pady=(12, 24), anchor="w")
+            categoria = rec.get("categoria", "")
+            chip_bg, chip_fg = colores_chip.get(categoria, (C["acento_suave"], C["marino"]))
 
-        self._boton_accion(frame_btn, "🔗  Abrir recurso seleccionado", C["azul_dato"], C["azul_dato_hover"],
-                           self._abrir_recurso_digital).pack(side="left")
+            # Tarjeta contenedor
+            card = tk.Frame(frame_cards, bg=C["tarjeta"],
+                            highlightthickness=1, highlightbackground=C["borde"])
+            card.grid(row=fila_grid, column=col_grid, padx=8, pady=8, sticky="nsew")
+            frame_cards.grid_columnconfigure(col_grid, weight=1, uniform="digcol")
 
-    def _abrir_recurso_digital(self):
-        seleccion = self.tabla_digital.selection()
-        if not seleccion:
-            messagebox.showwarning("Atención", "Selecciona un recurso de la tabla para abrirlo.")
-            return
-
-        indice = int(seleccion[0])
-        recursos = _cargar_libreria_digital()
-        if 0 <= indice < len(recursos):
-            url = recursos[indice].get("url", "")
-            if url:
-                webbrowser.open(url)
+            # ---- PORTADA ----
+            foto = _cargar_foto_portada(categoria, ancho=120, alto=160)
+            if foto:
+                self._fotos_digital.append(foto)
+                lbl_img = tk.Label(card, image=foto, bg=C["marino"],
+                                   width=120, height=160)
+                lbl_img.pack(fill="x")
             else:
-                messagebox.showinfo("Sin enlace", "Este recurso no tiene un enlace disponible aún.")
+                # Fallback: recuadro con emoji si PIL no disponible
+                lbl_img = tk.Label(card, text="📖", font=("Segoe UI", 36),
+                                   bg=C["marino"], fg=C["acento"],
+                                   width=120, height=80)
+                lbl_img.pack(fill="x", ipady=18)
+
+            # ---- CONTENIDO TEXTO ----
+            inner_card = tk.Frame(card, bg=C["tarjeta"])
+            inner_card.pack(fill="x", padx=12, pady=10)
+
+            # Chip de categoría
+            chip = tk.Label(inner_card, text=categoria,
+                            font=("Segoe UI", 7, "bold"),
+                            bg=chip_bg, fg=chip_fg, padx=6, pady=2)
+            chip.pack(anchor="w", pady=(0, 5))
+
+            # Título (con wrap dinámico)
+            lbl_titulo = tk.Label(inner_card, text=rec.get("titulo", ""),
+                                  font=("Segoe UI", 9, "bold"),
+                                  bg=C["tarjeta"], fg=C["marino"],
+                                  wraplength=170, justify="left", anchor="w")
+            lbl_titulo.pack(anchor="w", pady=(0, 3))
+
+            # Autor
+            tk.Label(inner_card, text=rec.get("autor", ""),
+                     font=("Segoe UI", 8), bg=C["tarjeta"],
+                     fg=C["texto_muted"], wraplength=170, justify="left").pack(anchor="w")
+
+            # Descripción (2 líneas)
+            tk.Label(inner_card, text=rec.get("descripcion", ""),
+                     font=("Segoe UI", 8), bg=C["tarjeta"],
+                     fg=C["texto_muted"], wraplength=170, justify="left").pack(anchor="w", pady=(4, 6))
+
+            # Botón Abrir
+            idx = i  # captura por valor
+            url = rec.get("url", "")
+            btn = tk.Button(
+                inner_card, text="🔗  Abrir recurso",
+                font=("Segoe UI", 8, "bold"),
+                bg=C["azul_dato"], fg="white", relief="flat", bd=0,
+                padx=8, pady=5, cursor="hand2",
+                command=lambda u=url: (webbrowser.open(u) if u else
+                                       messagebox.showinfo("Sin enlace", "Este recurso no tiene un enlace disponible aún."))
+            )
+            btn.pack(anchor="w")
+            btn.bind("<Enter>", lambda e, b=btn: b.config(bg=C["azul_dato_hover"]))
+            btn.bind("<Leave>", lambda e, b=btn: b.config(bg=C["azul_dato"]))
+
+        if not recursos:
+            tk.Label(frame_cards, text="No hay recursos digitales disponibles.",
+                     font=self.f_actividad, bg=C["fondo"], fg=C["texto_muted"]).pack(padx=20, pady=30)
 
     # =====================================================================
     # 🔍 VISTA: CATÁLOGO / BÚSQUEDA
@@ -685,13 +760,60 @@ class VentanaUsuario:
         disponibles = total - prestados
 
         frame_stats = tk.Frame(self.area_contenido, bg=C["fondo"])
-        frame_stats.pack(padx=32, pady=(12, 0), anchor="w")
-        tk.Label(frame_stats, text=f"📚 Total: {total}   |   ✅ Disponibles: {disponibles}   |   📕 Prestados: {prestados}",
+        frame_stats.pack(padx=32, pady=(10, 0), anchor="w")
+        tk.Label(frame_stats,
+                 text=f"📚 Total: {total}   |   ✅ Disponibles: {disponibles}   |   📕 Prestados: {prestados}",
                  font=self.f_actividad, bg=C["fondo"], fg=C["texto_muted"]).pack(anchor="w")
 
-        # Tabla del catálogo
-        frame_tabla = tk.Frame(self.area_contenido, bg=C["fondo"])
-        frame_tabla.pack(padx=32, pady=(10, 24), fill="both", expand=True)
+        # --- LAYOUT HORIZONTAL: tabla izq + panel detalle der ---
+        frame_body = tk.Frame(self.area_contenido, bg=C["fondo"])
+        frame_body.pack(padx=32, pady=(8, 24), fill="both", expand=True)
+
+        # --- PANEL LATERAL DE DETALLE CON PORTADA (Se empaqueta PRIMERO) ---
+        self._panel_detalle_cat = tk.Frame(frame_body, bg=C["tarjeta"],
+                                            highlightthickness=1, highlightbackground=C["borde"],
+                                            width=200)
+        self._panel_detalle_cat.pack(side="right", fill="y", padx=(12, 0))
+        self._panel_detalle_cat.pack_propagate(False)
+
+        # Contenido inicial del panel (instrucción)
+        self._foto_detalle_cat = None  # referencia para GC
+        self._lbl_portada_cat = tk.Label(self._panel_detalle_cat, bg=C["marino"],
+                                          width=160, height=210)
+        self._lbl_portada_cat.pack(fill="x")
+
+        inner_det = tk.Frame(self._panel_detalle_cat, bg=C["tarjeta"])
+        inner_det.pack(fill="both", expand=True, padx=10, pady=10)
+
+        self._lbl_det_titulo = tk.Label(inner_det, text="Selecciona un libro",
+                                         font=("Segoe UI", 9, "bold"),
+                                         bg=C["tarjeta"], fg=C["marino"],
+                                         wraplength=170, justify="left")
+        self._lbl_det_titulo.pack(anchor="w", pady=(0, 4))
+        self._lbl_det_id = tk.Label(inner_det, text="",
+                                    font=("Segoe UI", 8), bg=C["tarjeta"],
+                                    fg=C["texto_muted"])
+        self._lbl_det_id.pack(anchor="w")
+        self._lbl_det_ubic = tk.Label(inner_det, text="",
+                                      font=("Segoe UI", 8), bg=C["tarjeta"],
+                                      fg=C["texto_muted"])
+        self._lbl_det_ubic.pack(anchor="w")
+        self._lbl_det_estado = tk.Label(inner_det, text="",
+                                         font=("Segoe UI", 9, "bold"),
+                                         bg=C["tarjeta"], fg=C["verde"])
+        self._lbl_det_estado.pack(anchor="w", pady=(6, 0))
+
+        # Cargar portada default al inicio
+        foto_init = _cargar_foto_portada(None, ancho=180, alto=210)
+        if foto_init:
+            self._foto_detalle_cat = foto_init
+            self._lbl_portada_cat.config(image=foto_init)
+        else:
+            self._lbl_portada_cat.config(image="", text="📖", font=("Segoe UI", 42), fg=C["acento"])
+
+        # Tabla del catálogo (Se empaqueta DESPUÉS)
+        frame_tabla = tk.Frame(frame_body, bg=C["fondo"])
+        frame_tabla.pack(side="left", fill="both", expand=True)
 
         self._estilizar_treeview()
         columnas = ("id", "titulo", "fila", "columna", "estado")
@@ -704,21 +826,54 @@ class VentanaUsuario:
         self.tabla_catalogo.heading("columna", text="Columna")
         self.tabla_catalogo.heading("estado", text="Disponibilidad")
 
-        self.tabla_catalogo.column("id", width=90, anchor="center")
-        self.tabla_catalogo.column("titulo", width=320, anchor="w")
-        self.tabla_catalogo.column("fila", width=70, anchor="center")
-        self.tabla_catalogo.column("columna", width=80, anchor="center")
-        self.tabla_catalogo.column("estado", width=120, anchor="center")
+        self.tabla_catalogo.column("id", width=80, anchor="center")
+        self.tabla_catalogo.column("titulo", width=240, anchor="w")
+        self.tabla_catalogo.column("fila", width=55, anchor="center")
+        self.tabla_catalogo.column("columna", width=65, anchor="center")
+        self.tabla_catalogo.column("estado", width=100, anchor="center")
 
         self.tabla_catalogo.tag_configure("disponible", foreground=C["verde"])
         self.tabla_catalogo.tag_configure("prestado", foreground=C["rojo"])
 
-        scrollbar = ttk.Scrollbar(frame_tabla, orient="vertical", command=self.tabla_catalogo.yview)
-        self.tabla_catalogo.configure(yscrollcommand=scrollbar.set)
+        scrollbar_cat = ttk.Scrollbar(frame_tabla, orient="vertical", command=self.tabla_catalogo.yview)
+        self.tabla_catalogo.configure(yscrollcommand=scrollbar_cat.set)
         self.tabla_catalogo.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
+        scrollbar_cat.pack(side="right", fill="y")
+
+
+        # Vincular selección en tabla a actualización de panel
+        self.tabla_catalogo.bind("<<TreeviewSelect>>", self._actualizar_panel_detalle_cat)
 
         self._filtrar_catalogo()
+
+    def _actualizar_panel_detalle_cat(self, event=None):
+        """Actualiza el panel lateral con los datos del libro seleccionado."""
+        seleccion = self.tabla_catalogo.selection()
+        if not seleccion:
+            return
+        valores = self.tabla_catalogo.item(seleccion[0], "values")
+        if not valores:
+            return
+        id_libro, titulo, fila, columna, estado = valores
+
+        # Actualizar textos
+        self._lbl_det_titulo.config(text=titulo)
+        self._lbl_det_id.config(text=f"ID: {id_libro}")
+        self._lbl_det_ubic.config(text=f"📂 Fila {fila}, Columna {columna}")
+
+        if estado == "Disponible":
+            self._lbl_det_estado.config(text="✅ Disponible", fg=C["verde"])
+        else:
+            self._lbl_det_estado.config(text="📕 Prestado", fg=C["rojo"])
+
+        # Portada — los libros físicos usan la portada por defecto
+        foto = _cargar_foto_portada(None, ancho=180, alto=210)
+        if foto:
+            self._foto_detalle_cat = foto
+            self._lbl_portada_cat.config(image=foto, text="")
+        else:
+            self._lbl_portada_cat.config(image="", text="📖",
+                                          font=("Segoe UI", 42), fg=C["acento"])
 
     def _filtrar_catalogo(self):
         placeholder = "Buscar por título o ID..."
@@ -741,6 +896,7 @@ class VentanaUsuario:
             self.tabla_catalogo.insert("", "end",
                                        values=(lib["id"], lib["titulo"], lib["f"], lib["c"], estado),
                                        tags=(tag,))
+
 
     # =====================================================================
     # 💬 VISTA: BUZÓN DE SUGERENCIAS

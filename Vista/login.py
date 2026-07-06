@@ -79,7 +79,7 @@ def pantalla_login():
     root_login = tk.Tk()
     root_login.title("Login - Sistema Biblioteca")
     root_login.geometry("320x340")
-    root_login.resizable(False, False)
+    root_login.resizable(True, True)
     root_login.eval('tk::PlaceWindow . center') # Centrar ventana
 
     tk.Label(root_login, text="ACCESO AL SISTEMA", font=("Arial", 14, "bold"), fg="#2c3e50").pack(pady=20)

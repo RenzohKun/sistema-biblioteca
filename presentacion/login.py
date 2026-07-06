@@ -121,7 +121,10 @@ def pantalla_login(posicion_actual=None):
         root.geometry(f"480x560+{posicion_actual[0]}+{posicion_actual[1]}")
     else:
         root.geometry("480x560")
-        root.eval("tk::PlaceWindow . center")
+        root.update_idletasks()
+        sw = root.winfo_screenwidth()
+        sh = root.winfo_screenheight()
+        root.geometry(f"480x560+{(sw-480)//2}+{(sh-560)//2}")
 
     # ---- CANVAS SCROLLABLE ----
     canvas = tk.Canvas(root, bg=C["fondo"], bd=0, highlightthickness=0)

@@ -157,7 +157,10 @@ def pantalla_registro(posicion_actual=None):
         root.geometry(f"560x700+{posicion_actual[0]}+{posicion_actual[1]}")
     else:
         root.geometry("560x700")
-        root.eval("tk::PlaceWindow . center")
+        root.update_idletasks()
+        sw = root.winfo_screenwidth()
+        sh = root.winfo_screenheight()
+        root.geometry(f"560x700+{(sw-560)//2}+{(sh-700)//2}")
 
     correos_validos = cargar_padron_universitario()
 

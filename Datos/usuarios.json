@@ -10,7 +10,7 @@
     },
     "elias pacheco": {
         "clave": "12345",
-        "rol": "estudiante",
+        "rol": "bibliotecario",
         "cedula": "1315641116",
         "nombre": "Estudiante ULEAM Autoverificado",
         "correo": "e1315641116@live.uleam.edu.ec",
@@ -29,11 +29,14 @@
     },
     "maria": {
         "clave": "12345",
-        "rol": "admin",
+        "rol": "usuario",
         "cedula": "1345678994",
         "nombre": "Administrador del Sistema",
         "correo": "maria.velez@uleam.edu.ec",
-        "telefono": "6767676767676767"
+        "telefono": "6767676767676767",
+        "strikes": 0,
+        "deuda": 0.0,
+        "suspendido_hasta": null
     },
     "eso tilin": {
         "clave": "1234",
@@ -42,6 +45,11 @@
         "nombre": "Juan Fernandez",
         "correo": "cetace1234@gmail.com",
         "telefono": "00000000000000",
+        "strikes": 0,
+        "deuda": 0.0,
+        "suspendido_hasta": null
+    },
+    "test": {
         "strikes": 0,
         "deuda": 0.0,
         "suspendido_hasta": null

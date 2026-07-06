@@ -2,7 +2,13 @@ import tkinter as tk
 from tkinter import ttk, messagebox, font as tkfont
 import os
 import sys
+import json
 from datetime import datetime
+try:
+    from PIL import Image, ImageTk
+    _PIL_OK = True
+except ImportError:
+    _PIL_OK = False
 
 # ✅ Igual que en login.py: asegura que la raíz del proyecto esté en el path,
 # así este archivo funciona tanto importado desde login.py como ejecutado
@@ -10,6 +16,61 @@ from datetime import datetime
 CARPETA_RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if CARPETA_RAIZ not in sys.path:
     sys.path.insert(0, CARPETA_RAIZ)
+
+CARPETA_DATOS         = os.path.join(CARPETA_RAIZ, "datos")
+CARPETA_PORTADAS      = os.path.join(CARPETA_DATOS, "portadas")
+ARCHIVO_LIBRERIA_DIG  = os.path.join(CARPETA_DATOS, "libreria_digital.json")
+
+CATEGORIAS_DISPONIBLES = [
+    "Programación", "Bases de Datos", "Algoritmos",
+    "Redes", "Ingeniería de Software", "Matemáticas",
+    "Otra",
+]
+
+_PORTADA_CATEGORIA = {
+    "Programación":           "portada_programacion.png",
+    "Bases de Datos":         "portada_basesdatos.png",
+    "Algoritmos":             "portada_algoritmos.png",
+    "Redes":                  "portada_redes.png",
+    "Ingeniería de Software": "portada_software.png",
+    "Matemáticas":           "portada_matematicas.png",
+}
+
+def _cargar_lib_digital():
+    if not os.path.exists(ARCHIVO_LIBRERIA_DIG):
+        return []
+    try:
+        with open(ARCHIVO_LIBRERIA_DIG, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return []
+
+def _guardar_lib_digital(recursos):
+    try:
+        os.makedirs(CARPETA_DATOS, exist_ok=True)
+        with open(ARCHIVO_LIBRERIA_DIG, "w", encoding="utf-8") as f:
+            json.dump(recursos, f, ensure_ascii=False, indent=2)
+        return True
+    except Exception as e:
+        messagebox.showerror("Error", f"No se pudo guardar la librería digital:\n{e}")
+        return False
+
+def _foto_portada_cat(categoria, ancho=120, alto=160):
+    """Devuelve ImageTk.PhotoImage según categoría, o None si no disponible."""
+    if not _PIL_OK:
+        return None
+    nombre = _PORTADA_CATEGORIA.get(categoria, "portada_default.png")
+    ruta = os.path.join(CARPETA_PORTADAS, nombre)
+    if not os.path.exists(ruta):
+        ruta = os.path.join(CARPETA_PORTADAS, "portada_default.png")
+    if not os.path.exists(ruta):
+        return None
+    try:
+        img = Image.open(ruta).resize((ancho, alto), Image.Resampling.LANCZOS)
+        return ImageTk.PhotoImage(img)
+    except Exception:
+        return None
+
 
 # Reutilizamos toda la lógica de datos, paleta y estilo ya construida para el
 # panel de administrador: cargar/guardar libros, búsqueda recursiva, estilos
@@ -45,7 +106,11 @@ class VentanaBibliotecario(VentanaAdministrador):
         self.root.title("Sistema de Biblioteca — Panel de Bibliotecario")
         self.root.configure(bg=C["fondo"])
         self.root.geometry("1080x680")
-        self.root.resizable(False, False)
+        self.root.resizable(True, True)
+        self.root.update_idletasks()
+        sw = self.root.winfo_screenwidth()
+        sh = self.root.winfo_screenheight()
+        self.root.geometry(f"1080x680+{(sw-1080)//2}+{(sh-680)//2}")
 
         cargar_desde_archivo()
         PR.cargar_prestamos()
@@ -101,6 +166,7 @@ class VentanaBibliotecario(VentanaAdministrador):
         self._crear_boton_menu("prestamos", "🔄  Préstamos y Devoluciones", self.mostrar_prestamos)
         self._crear_boton_menu("reservas",  "🔔  Reservas", self.mostrar_reservas)
         self._crear_boton_menu("matriz",    "🗄  Ver Estantería", self.mostrar_estanteria_matriz)
+        self._crear_boton_menu("digital",   "🌐  Librería Digital", self.mostrar_gestion_digital)
 
         btn_logout = tk.Button(
             self.menu_lateral, text="Cerrar sesión", command=self.cerrar_sesion,
@@ -131,7 +197,7 @@ class VentanaBibliotecario(VentanaAdministrador):
         # --- TARJETAS: catálogo + alertas en la misma fila de un vistazo ---
         frame_tarjetas = tk.Frame(self.area_contenido, bg=C["fondo"])
         frame_tarjetas.pack(padx=32, pady=(18, 0), fill="x", anchor="w")
-        frame_tarjetas.grid_columnconfigure((0, 1, 2, 3), weight=1, uniform="card")
+        frame_tarjetas.grid_columnconfigure((0, 1, 2, 3), weight=1, uniform="card", minsize=120)
 
         total_libros = len(lista_libros)
         espacios_libres = sum(fila.count("Libre") for fila in estanteria)
@@ -710,7 +776,7 @@ class VentanaBibliotecario(VentanaAdministrador):
         modal = tk.Toplevel(self.root)
         modal.title(titulo)
         modal.configure(bg=C["fondo"])
-        modal.resizable(False, False)
+        modal.resizable(True, True)
         modal.transient(self.root)
         modal.grab_set()
 
@@ -767,16 +833,275 @@ class VentanaBibliotecario(VentanaAdministrador):
     # _estilizar_treeview se heredan tal cual de VentanaAdministrador — el
     # bibliotecario tiene exactamente las mismas funciones de catálogo que el admin.
     #
-    # ✅ "cerrar_sesion" también se hereda ahora de VentanaAdministrador (ya no se
-    # sobreescribe aquí): regresa correctamente a pantalla_principal() de main.py
-    # en vez de simplemente destruir la ventana.
-    #
-    # Los métodos de gestión de usuarios (mostrar_gestion_usuarios,
-    # editar_usuario_seleccionado, eliminar_usuario_seleccionado,
-    # _abrir_modal_editar_usuario) también se heredan por simplicidad de código,
-    # pero NO son alcanzables desde la interfaz: no existe ningún botón de menú
-    # que los invoque (se omitió deliberadamente "Gestión de Usuarios" del
-    # menú lateral). Quedan inertes — no representan una vía de acceso real.
+    # Los métodos de gestión de usuarios quedan inertes — no hay botón en el menú.
+
+    # =========================================================================
+    # 🌐 VISTA: GESTIÓN DE LIBRERÍA DIGITAL
+    # =========================================================================
+    def mostrar_gestion_digital(self):
+        self.seccion_activa = "digital"
+        self._refrescar_estado_botones_menu()
+        self.limpiar_contenido()
+        self._encabezado(
+            "Librería Digital",
+            "Agrega, edita y elimina recursos digitales del catálogo en línea"
+        )
+
+        # --- Botones de acción ---
+        frame_btns = tk.Frame(self.area_contenido, bg=C["fondo"])
+        frame_btns.pack(padx=32, pady=(0, 14), fill="x")
+
+        self._boton_accion(frame_btns, "➕  Nuevo recurso",
+                           C["verde"], C["verde_hover"],
+                           lambda: self._modal_recurso_digital()).pack(side="left", padx=(0, 10))
+        self._boton_accion(frame_btns, "✏️  Editar seleccionado",
+                           C["azul_dato"], C["azul_dato_hover"],
+                           self._editar_recurso_digital).pack(side="left", padx=(0, 10))
+        self._boton_accion(frame_btns, "🗑  Eliminar seleccionado",
+                           C["rojo"], C["rojo_hover"],
+                           self._eliminar_recurso_digital).pack(side="left")
+
+        tk.Label(frame_btns,
+                 text="Doble clic en una fila para editar rápidamente",
+                 font=("Segoe UI", 8, "italic"),
+                 bg=C["fondo"], fg=C["texto_muted"]).pack(side="left", padx=(16, 0))
+
+        # --- LAYOUT: tabla + panel portada ---
+        frame_body = tk.Frame(self.area_contenido, bg=C["fondo"])
+        frame_body.pack(padx=32, pady=(0, 24), fill="both", expand=True)
+
+        # --- Panel portada (se empaqueta PRIMERO para reservar espacio) ---
+        panel_port = tk.Frame(frame_body, bg=C["tarjeta"],
+                              highlightthickness=1, highlightbackground=C["borde"],
+                              width=210)
+        panel_port.pack(side="right", fill="y", padx=(12, 0))
+        panel_port.pack_propagate(False)
+
+        self._foto_dig_admin  = None
+        self._lbl_port_dig    = tk.Label(panel_port, bg=C["marino"])
+        self._lbl_port_dig.pack(fill="x")
+
+        inner_port = tk.Frame(panel_port, bg=C["tarjeta"])
+        inner_port.pack(fill="both", expand=True, padx=10, pady=10)
+
+        self._lbl_pd_titulo = tk.Label(inner_port, text="Selecciona un recurso",
+                                        font=("Segoe UI", 9, "bold"),
+                                        bg=C["tarjeta"], fg=C["marino"],
+                                        wraplength=180, justify="left")
+        self._lbl_pd_titulo.pack(anchor="w", pady=(0, 4))
+        self._lbl_pd_autor = tk.Label(inner_port, text="",
+                                       font=("Segoe UI", 8), bg=C["tarjeta"],
+                                       fg=C["texto_muted"], wraplength=180, justify="left")
+        self._lbl_pd_autor.pack(anchor="w")
+        self._lbl_pd_cat = tk.Label(inner_port, text="",
+                                     font=("Segoe UI", 8, "bold"),
+                                     bg=C["tarjeta"], fg=C["acento"])
+        self._lbl_pd_cat.pack(anchor="w", pady=(4, 0))
+        self._lbl_pd_desc = tk.Label(inner_port, text="",
+                                      font=("Segoe UI", 8), bg=C["tarjeta"],
+                                      fg=C["texto_muted"],
+                                      wraplength=180, justify="left")
+        self._lbl_pd_desc.pack(anchor="w", pady=(4, 0))
+
+        # Portada inicial — se carga y actualiza dinámicamente al cambiar panel
+        def _cargar_portada_en_panel(cat=None):
+            foto = _foto_portada_cat(cat, ancho=190, alto=220)
+            if foto:
+                self._foto_dig_admin = foto
+                self._lbl_port_dig.config(image=foto, text="")
+            else:
+                self._lbl_port_dig.config(image="", text="🌐",
+                                          font=("Segoe UI", 46), fg=C["acento"],
+                                          bg=C["marino"])
+        _cargar_portada_en_panel(None)
+
+        # Tabla (se empaqueta DESPUÉS del panel para que ocupe el resto)
+        frame_tabla = tk.Frame(frame_body, bg=C["fondo"])
+        frame_tabla.pack(side="left", fill="both", expand=True)
+
+        self._estilizar_treeview()
+        columnas = ("titulo", "autor", "categoria", "url")
+        self.tabla_digital_admin = ttk.Treeview(
+            frame_tabla, columns=columnas, show="headings",
+            height=14, style="Biblio.Treeview"
+        )
+
+        self.tabla_digital_admin.heading("titulo",    text="Título")
+        self.tabla_digital_admin.heading("autor",     text="Autor")
+        self.tabla_digital_admin.heading("categoria", text="Categoría")
+        self.tabla_digital_admin.heading("url",       text="URL")
+
+        self.tabla_digital_admin.column("titulo",    width=240, anchor="w")
+        self.tabla_digital_admin.column("autor",     width=150, anchor="w")
+        self.tabla_digital_admin.column("categoria", width=130, anchor="center")
+        self.tabla_digital_admin.column("url",       width=220, anchor="w")
+
+        sb_dig = ttk.Scrollbar(frame_tabla, orient="vertical",
+                               command=self.tabla_digital_admin.yview)
+        self.tabla_digital_admin.configure(yscrollcommand=sb_dig.set)
+        self.tabla_digital_admin.pack(side="left", fill="both", expand=True)
+        sb_dig.pack(side="right", fill="y")
+
+        # Doble clic para editar
+        self.tabla_digital_admin.bind(
+            "<Double-1>", lambda e: self._editar_recurso_digital()
+        )
+        # Selección → portada
+        self.tabla_digital_admin.bind(
+            "<<TreeviewSelect>>", self._actualizar_portada_digital
+        )
+
+        self._actualizar_tabla_digital()
+
+    def _actualizar_tabla_digital(self):
+        for fila in self.tabla_digital_admin.get_children():
+            self.tabla_digital_admin.delete(fila)
+        for i, rec in enumerate(_cargar_lib_digital()):
+            self.tabla_digital_admin.insert(
+                "", "end", iid=str(i),
+                values=(rec.get("titulo", ""), rec.get("autor", ""),
+                        rec.get("categoria", ""), rec.get("url", ""))
+            )
+
+    def _actualizar_portada_digital(self, event=None):
+        """Actualiza el panel derecho al seleccionar una fila."""
+        sel = self.tabla_digital_admin.selection()
+        if not sel:
+            return
+        idx = int(sel[0])
+        recursos = _cargar_lib_digital()
+        if 0 <= idx < len(recursos):
+            rec = recursos[idx]
+            cat = rec.get("categoria", "")
+            self._lbl_pd_titulo.config(text=rec.get("titulo", ""))
+            self._lbl_pd_autor.config(text=rec.get("autor", ""))
+            self._lbl_pd_cat.config(text=cat)
+            self._lbl_pd_desc.config(text=rec.get("descripcion", ""))
+            foto = _foto_portada_cat(cat, ancho=190, alto=220)
+            if foto:
+                self._foto_dig_admin = foto
+                self._lbl_port_dig.config(image=foto, text="")
+
+    def _editar_recurso_digital(self):
+        sel = self.tabla_digital_admin.selection()
+        if not sel:
+            messagebox.showwarning("Atención", "Selecciona un recurso de la tabla para editar.")
+            return
+        idx = int(sel[0])
+        recursos = _cargar_lib_digital()
+        if 0 <= idx < len(recursos):
+            self._modal_recurso_digital(indice=idx, datos=recursos[idx])
+
+
+    def _eliminar_recurso_digital(self):
+        sel = self.tabla_digital_admin.selection()
+        if not sel:
+            messagebox.showwarning("Atención", "Selecciona un recurso de la tabla para eliminar.")
+            return
+        idx = int(sel[0])
+        recursos = _cargar_lib_digital()
+        if not (0 <= idx < len(recursos)):
+            return
+        titulo = recursos[idx].get("titulo", "")
+        if not messagebox.askyesno("Confirmar", f"¿Eliminar permanentemente '{titulo}'?"):
+            return
+        recursos.pop(idx)
+        if _guardar_lib_digital(recursos):
+            messagebox.showinfo("Listo", f"'{titulo}' fue eliminado de la librería digital.")
+            self._actualizar_tabla_digital()
+
+    def _modal_recurso_digital(self, indice=None, datos=None):
+        """Modal para agregar o editar un recurso digital.
+        Si 'indice' es None, se crea uno nuevo; si no, se edita el existente.
+        """
+        es_nuevo = indice is None
+        datos = datos or {}
+
+        modal = self._crear_modal_base(
+            "Nuevo recurso digital" if es_nuevo else "Editar recurso digital",
+            460, 520
+        )
+        inner = modal.inner
+
+        # Título
+        tk.Label(inner, text="Título", font=("Segoe UI", 9, "bold"),
+                 bg=C["fondo"], fg=C["texto_muted"]).pack(anchor="w")
+        ent_titulo = tk.Entry(inner, font=("Segoe UI", 10), relief="flat",
+                              highlightthickness=1, highlightbackground=C["borde"])
+        ent_titulo.insert(0, datos.get("titulo", ""))
+        ent_titulo.pack(fill="x", ipady=5, pady=(2, 10))
+
+        # Autor
+        tk.Label(inner, text="Autor", font=("Segoe UI", 9, "bold"),
+                 bg=C["fondo"], fg=C["texto_muted"]).pack(anchor="w")
+        ent_autor = tk.Entry(inner, font=("Segoe UI", 10), relief="flat",
+                             highlightthickness=1, highlightbackground=C["borde"])
+        ent_autor.insert(0, datos.get("autor", ""))
+        ent_autor.pack(fill="x", ipady=5, pady=(2, 10))
+
+        # Categoría (Combobox)
+        tk.Label(inner, text="Categoría", font=("Segoe UI", 9, "bold"),
+                 bg=C["fondo"], fg=C["texto_muted"]).pack(anchor="w")
+        combo_cat = ttk.Combobox(inner, values=CATEGORIAS_DISPONIBLES,
+                                  state="readonly", font=("Segoe UI", 10))
+        combo_cat.set(datos.get("categoria", CATEGORIAS_DISPONIBLES[0]))
+        combo_cat.pack(fill="x", pady=(2, 10))
+
+        # URL
+        tk.Label(inner, text="URL del recurso", font=("Segoe UI", 9, "bold"),
+                 bg=C["fondo"], fg=C["texto_muted"]).pack(anchor="w")
+        ent_url = tk.Entry(inner, font=("Segoe UI", 10), relief="flat",
+                           highlightthickness=1, highlightbackground=C["borde"])
+        ent_url.insert(0, datos.get("url", ""))
+        ent_url.pack(fill="x", ipady=5, pady=(2, 10))
+
+        # Descripción
+        tk.Label(inner, text="Descripción breve", font=("Segoe UI", 9, "bold"),
+                 bg=C["fondo"], fg=C["texto_muted"]).pack(anchor="w")
+        txt_desc = tk.Text(inner, height=4, font=("Segoe UI", 10), relief="flat",
+                           highlightthickness=1, highlightbackground=C["borde"],
+                           wrap="word", padx=8, pady=6)
+        txt_desc.insert("1.0", datos.get("descripcion", ""))
+        txt_desc.pack(fill="x", pady=(2, 10))
+
+        lbl_err = tk.Label(inner, text="", font=("Segoe UI", 8),
+                           bg=C["fondo"], fg=C["rojo"], wraplength=380, justify="left")
+        lbl_err.pack(anchor="w", pady=(0, 6))
+
+        def confirmar():
+            titulo  = ent_titulo.get().strip()
+            autor   = ent_autor.get().strip()
+            cat     = combo_cat.get().strip()
+            url     = ent_url.get().strip()
+            desc    = txt_desc.get("1.0", "end-1c").strip()
+
+            if not titulo or not autor:
+                lbl_err.config(text="⚠ El título y el autor son obligatorios.")
+                return
+
+            nuevo = {"titulo": titulo, "autor": autor,
+                     "categoria": cat, "url": url, "descripcion": desc}
+
+            recursos = _cargar_lib_digital()
+            if es_nuevo:
+                recursos.append(nuevo)
+                msg = f"'{titulo}' fue añadido a la librería digital."
+            else:
+                recursos[indice] = nuevo
+                msg = f"'{titulo}' fue actualizado correctamente."
+
+            if _guardar_lib_digital(recursos):
+                messagebox.showinfo("Guardado", msg)
+                modal.destroy()
+                self._actualizar_tabla_digital()
+
+        self._botones_modal(
+            inner,
+            "Guardar recurso" if es_nuevo else "Actualizar recurso",
+            C["verde"], C["verde_hover"],
+            confirmar, modal.destroy
+        )
+
 
 
 def pantalla_bibliotecario(usuario, posicion_actual=None, nombre=None):

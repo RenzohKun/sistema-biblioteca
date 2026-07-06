@@ -1,31 +1,3 @@
-"""
-Módulo de préstamos y reservas.
-
-Se mantiene separado de Admin.py a propósito: Admin.py concentra el
-catálogo (libros + estantería) y usuarios del sistema (login). Este
-archivo concentra el movimiento de la biblioteca (quién tiene qué libro
-y quién lo está esperando), que es un dominio distinto.
-
-Estructura de cada préstamo en prestamos.json:
-    {
-        "id_libro": "L001",
-        "usuario": "Juan Pérez",        # nombre libre del lector, NO es
-                                         # una cuenta de usuarios.json
-        "fecha_prestamo": "2026-06-10",
-        "fecha_limite": "2026-06-17",
-        "fecha_devolucion": null,       # se llena al devolver
-        "estado": "activo"              # activo | devuelto | vencido
-    }
-
-Estructura de cada reserva en reservas.json:
-    {
-        "id_libro": "L001",
-        "usuario": "María G.",
-        "fecha_solicitud": "2026-06-15",
-        "estado": "pendiente"           # pendiente | aprobada | rechazada
-    }
-"""
-
 import json
 import os
 from datetime import datetime, timedelta
