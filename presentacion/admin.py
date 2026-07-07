@@ -19,6 +19,7 @@ CARPETA_DATOS       = os.path.join(CARPETA_RAIZ, "datos")
 CARPETA_PORTADAS    = os.path.join(CARPETA_DATOS, "portadas")
 ARCHIVO_LIBROS      = os.path.join(CARPETA_DATOS, "biblioteca_datos.json")
 ARCHIVO_USUARIOS    = os.path.join(CARPETA_DATOS, "usuarios.json")
+ARCHIVO_PADRON      = os.path.join(CARPETA_DATOS, "padron_uleam.json")
 
 # ✅ Asegura que la raíz del proyecto esté en el path. Se necesita para poder
 # hacer "from main import pantalla_principal" al cerrar sesión, sin importar
@@ -148,6 +149,31 @@ def cargar_usuarios():
         return {}
 
 
+def cargar_padron():
+    """Carga la lista de correos válidos del padrón."""
+    if not os.path.exists(ARCHIVO_PADRON):
+        return []
+    try:
+        with open(ARCHIVO_PADRON, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"Aviso al cargar padrón: {e}")
+        return []
+
+
+def guardar_padron(padron):
+    """Guarda la lista de correos en el padrón."""
+    try:
+        os.makedirs(CARPETA_DATOS, exist_ok=True)
+        with open(ARCHIVO_PADRON, "w", encoding="utf-8") as f:
+            json.dump(padron, f, ensure_ascii=False, indent=2)
+        return True
+    except Exception as e:
+        messagebox.showerror("Error", f"No se pudo guardar el padrón:\n{e}")
+        return False
+
+
+
 def guardar_usuarios(usuarios):
     """Persiste el diccionario completo de usuarios en usuarios.json."""
     try:
@@ -235,6 +261,7 @@ class VentanaAdministrador:
         self._crear_boton_menu("libros",    "📖  Gestión de Libros", self.mostrar_gestion_libros)
         self._crear_boton_menu("matriz",    "🗄  Ver Estantería", self.mostrar_estanteria_matriz)
         self._crear_boton_menu("usuarios",  "👥  Gestión de Usuarios", self.mostrar_gestion_usuarios)
+        self._crear_boton_menu("padron",    "🎓  Padrón ULEAM", self.mostrar_padron)
         self._crear_boton_menu("strikes",   "⚠  Strikes", self.mostrar_strikes)
         self._crear_boton_menu("prestamos", "📋  Préstamos Activos", self.mostrar_prestamos_activos)
 
@@ -593,7 +620,85 @@ class VentanaAdministrador:
 
 
     # =========================================================================
-    # VISTA: GESTIÓN DE LIBROS
+    # VISTA: PADRÓN ULEAM
+    # =========================================================================
+    def mostrar_padron(self):
+        self.limpiar_contenido()
+        self._encabezado("Gestión del Padrón Universitario", "Añade o elimina correos válidos para el registro de estudiantes")
+
+        padron = cargar_padron()
+
+        # --- Controles de adición ---
+        frame_controles = tk.Frame(self.area_contenido, bg=C["fondo"])
+        frame_controles.pack(padx=32, pady=(0, 14), fill="x")
+
+        tk.Label(frame_controles, text="Nuevo correo:", font=self.f_subtitulo, bg=C["fondo"], fg=C["marino"]).pack(side="left", padx=(0, 10))
+        self.ent_nuevo_correo = tk.Entry(frame_controles, font=("Segoe UI", 11), width=35,
+                                         bg=C["tarjeta"], fg=C["marino"],
+                                         highlightthickness=1, highlightbackground=C["borde"], highlightcolor=C["acento"])
+        self.ent_nuevo_correo.pack(side="left", padx=(0, 10), ipady=4)
+
+        self._boton_accion(frame_controles, "➕ Añadir al padrón", C["verde"], "#218c53", self._agregar_al_padron).pack(side="left")
+        self._boton_accion(frame_controles, "🗑 Eliminar seleccionado", C["rojo"], C["rojo_hover"], self._eliminar_del_padron).pack(side="left", padx=(10, 0))
+
+        # --- Tabla ---
+        frame_tabla = tk.Frame(self.area_contenido, bg=C["fondo"])
+        frame_tabla.pack(padx=32, pady=(0, 24), fill="both", expand=True)
+
+        self._estilizar_treeview()
+        self.tabla_padron = ttk.Treeview(frame_tabla, columns=("correo",), show="headings", height=15, style="Biblio.Treeview")
+        self.tabla_padron.heading("correo", text="Correo Institucional")
+        self.tabla_padron.column("correo", width=500, anchor="w")
+
+        scrollbar = ttk.Scrollbar(frame_tabla, orient="vertical", command=self.tabla_padron.yview)
+        self.tabla_padron.configure(yscrollcommand=scrollbar.set)
+        self.tabla_padron.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        self.actualizar_tabla_padron()
+
+    def actualizar_tabla_padron(self):
+        for fila in self.tabla_padron.get_children():
+            self.tabla_padron.delete(fila)
+        padron = cargar_padron()
+        padron.sort()
+        for correo in padron:
+            self.tabla_padron.insert("", "end", values=(correo,))
+
+    def _agregar_al_padron(self):
+        correo = self.ent_nuevo_correo.get().strip().lower()
+        if not correo:
+            messagebox.showwarning("Atención", "Escribe un correo institucional válido.")
+            return
+        if not (correo.endswith("@live.uleam.edu.ec") or correo.endswith("@uleam.edu.ec")):
+            messagebox.showwarning("Dominio inválido", "Solo se admiten dominios @live.uleam.edu.ec o @uleam.edu.ec")
+            return
+
+        padron = cargar_padron()
+        if correo in padron:
+            messagebox.showinfo("Duplicado", "Ese correo ya está registrado en el padrón.")
+            return
+
+        padron.append(correo)
+        if guardar_padron(padron):
+            self.ent_nuevo_correo.delete(0, tk.END)
+            self.actualizar_tabla_padron()
+            messagebox.showinfo("Éxito", f"Correo '{correo}' añadido al padrón universitario.")
+
+    def _eliminar_del_padron(self):
+        seleccion = self.tabla_padron.selection()
+        if not seleccion:
+            messagebox.showwarning("Atención", "Selecciona un correo de la lista para eliminar.")
+            return
+
+        correo = self.tabla_padron.item(seleccion[0], "values")[0]
+        if messagebox.askyesno("Confirmar", f"¿Eliminar '{correo}' del padrón?\n\nLos usuarios con este correo ya registrados seguirán funcionando, pero nadie podrá crear cuentas nuevas con él."):
+            padron = cargar_padron()
+            if correo in padron:
+                padron.remove(correo)
+                guardar_padron(padron)
+                self.actualizar_tabla_padron()
+                messagebox.showinfo("Eliminado", "Correo eliminado del padrón.")
     # =========================================================================
     def mostrar_gestion_libros(self):
         self.limpiar_contenido()
