@@ -1,56 +1,56 @@
 {
-    "admin": {
-        "clave": "1234",
-        "rol": "admin",
-        "cedula": "0000000000",
-        "nombre": "Administrador General",
-        "correo": "admin@uleam.edu.ec",
-        "telefono": "0000000000"
-    },
-    "cetace1234": {
-        "clave": "12345",
-        "rol": "bibliotecario",
-        "nombre": "Elias Pacheco"
-    },
-    "elias pacheco": {
-        "clave": "12345",
-        "rol": "bibliotecario",
-        "cedula": "1315641116",
-        "nombre": "Estudiante ULEAM Autoverificado",
-        "correo": "e1315641116@live.uleam.edu.ec",
-        "telefono": "0967241166",
-        "strikes": 0,
-        "deuda": 0.0,
-        "suspendido_hasta": null
-    },
-    "admin2": {
-        "clave": "12345",
-        "rol": "admin",
-        "cedula": "132456785",
-        "nombre": "Administrador del Sistema",
-        "correo": "test@live.uleam.edu.ec",
-        "telefono": "2322323232323"
-    },
-    "maria": {
-        "clave": "12345",
-        "rol": "usuario",
-        "cedula": "1345678994",
-        "nombre": "Administrador del Sistema",
-        "correo": "maria.velez@uleam.edu.ec",
-        "telefono": "6767676767676767",
-        "strikes": 0,
-        "deuda": 0.0,
-        "suspendido_hasta": null
-    },
-    "eso tilin": {
-        "clave": "1234",
-        "rol": "invitado",
-        "cedula": "13245678943",
-        "nombre": "Juan Fernandez",
-        "correo": "cetace1234@gmail.com",
-        "telefono": "00000000000000",
-        "strikes": 0,
-        "deuda": 0.0,
-        "suspendido_hasta": null
-    }
+  "admin": {
+    "clave": "1234",
+    "rol": "admin",
+    "cedula": "0000000000",
+    "nombre": "Administrador General",
+    "correo": "admin@uleam.edu.ec",
+    "telefono": "0000000000"
+  },
+  "cetace1234": {
+    "clave": "12345",
+    "rol": "bibliotecario",
+    "nombre": "Elias Pacheco"
+  },
+  "elias pacheco": {
+    "clave": "12345",
+    "rol": "bibliotecario",
+    "cedula": "1315641116",
+    "nombre": "Enoc Elias Pacheco Olivo",
+    "correo": "e1315641116@live.uleam.edu.ec",
+    "telefono": "0967241166",
+    "strikes": 0,
+    "deuda": 0.0,
+    "suspendido_hasta": null
+  },
+  "admin2": {
+    "clave": "12345",
+    "rol": "admin",
+    "cedula": "132456785",
+    "nombre": "Administrador del Sistema",
+    "correo": "test@live.uleam.edu.ec",
+    "telefono": "2322323232323"
+  },
+  "maria": {
+    "clave": "12345",
+    "rol": "usuario",
+    "cedula": "1345678994",
+    "nombre": "Administrador del Sistema",
+    "correo": "maria.velez@uleam.edu.ec",
+    "telefono": "6767676767676767",
+    "strikes": 0,
+    "deuda": 0.0,
+    "suspendido_hasta": null
+  },
+  "eso tilin": {
+    "clave": "1234",
+    "rol": "invitado",
+    "cedula": "13245678943",
+    "nombre": "Juan Fernandez",
+    "correo": "cetace1234@gmail.com",
+    "telefono": "00000000000000",
+    "strikes": 0,
+    "deuda": 0.0,
+    "suspendido_hasta": null
+  }
 }

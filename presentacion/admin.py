@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, font as tkfont
 import json
 import os
+from datetime import datetime
 import sys
 try:
     from PIL import Image, ImageTk
@@ -184,6 +185,14 @@ class VentanaAdministrador:
 
         cargar_desde_archivo()
 
+        # Cargar datos de préstamos para el dashboard
+        try:
+            from logica.prestamos import cargar_prestamos
+            cargar_prestamos()
+            self._prestamos_disponibles = True
+        except ImportError:
+            self._prestamos_disponibles = False
+
         # --- FUENTES ---
         self.f_logo      = tkfont.Font(family="Segoe UI", size=15, weight="bold")
         self.f_bienv     = tkfont.Font(family="Segoe UI", size=10, slant="italic")
@@ -226,6 +235,8 @@ class VentanaAdministrador:
         self._crear_boton_menu("libros",    "📖  Gestión de Libros", self.mostrar_gestion_libros)
         self._crear_boton_menu("matriz",    "🗄  Ver Estantería", self.mostrar_estanteria_matriz)
         self._crear_boton_menu("usuarios",  "👥  Gestión de Usuarios", self.mostrar_gestion_usuarios)
+        self._crear_boton_menu("strikes",   "⚠  Strikes", self.mostrar_strikes)
+        self._crear_boton_menu("prestamos", "📋  Préstamos Activos", self.mostrar_prestamos_activos)
 
         btn_logout = tk.Button(
             self.menu_lateral, text="Cerrar sesión", command=self.cerrar_sesion,
@@ -314,6 +325,46 @@ class VentanaAdministrador:
         self._boton_accion(frame_acciones, "➕  Gestionar catálogo", C["marino"], C["marino_hover"], self.mostrar_gestion_libros).pack(side="left", padx=(0, 14))
         self._boton_accion(frame_acciones, "🗄  Ver mapa estantería", C["acento"], "#B07F2E", self.mostrar_estanteria_matriz).pack(side="left")
 
+        # --- Resumen de strikes y préstamos ---
+        total_con_strikes = sum(
+            1 for u in usuarios.values()
+            if isinstance(u, dict) and u.get("strikes", 0) > 0
+        )
+        total_bloqueados = sum(
+            1 for u in usuarios.values()
+            if isinstance(u, dict) and u.get("strikes", 0) >= 4
+        )
+
+        total_prestamos = 0
+        total_vencidos = 0
+        if self._prestamos_disponibles:
+            try:
+                from logica.prestamos import lista_prestamos
+                for p in lista_prestamos:
+                    if p.get("estado") in ("activo", "vencido"):
+                        total_prestamos += 1
+                        if p.get("estado") == "vencido":
+                            total_vencidos += 1
+            except Exception:
+                pass
+
+        tk.Label(
+            self.area_contenido, text="Estado de usuarios y préstamos",
+            font=self.f_seccion, bg=C["fondo"], fg=C["marino"]
+        ).pack(pady=(28, 14), padx=32, anchor="w")
+
+        frame_tarjetas2 = tk.Frame(self.area_contenido, bg=C["fondo"])
+        frame_tarjetas2.pack(padx=32, fill="x", anchor="w")
+        frame_tarjetas2.grid_columnconfigure((0, 1, 2, 3), weight=1, uniform="card2", minsize=120)
+
+        self._tarjeta_dashboard(frame_tarjetas2, 0, "⚠", "CON STRIKES", total_con_strikes,
+                                C["acento"] if total_con_strikes > 0 else C["verde"])
+        self._tarjeta_dashboard(frame_tarjetas2, 1, "🚫", "BLOQUEADOS", total_bloqueados,
+                                C["rojo"] if total_bloqueados > 0 else C["verde"])
+        self._tarjeta_dashboard(frame_tarjetas2, 2, "📖", "PRÉSTAMOS ACTIVOS", total_prestamos, C["azul_dato"])
+        self._tarjeta_dashboard(frame_tarjetas2, 3, "🔴", "VENCIDOS", total_vencidos,
+                                C["rojo"] if total_vencidos > 0 else C["verde"])
+
         if total_admins == 0:
             tk.Label(
                 self.area_contenido,
@@ -338,6 +389,208 @@ class VentanaAdministrador:
         btn.bind("<Enter>", lambda e: btn.config(bg=hover))
         btn.bind("<Leave>", lambda e: btn.config(bg=color))
         return btn
+
+    # =========================================================================
+    # VISTA: STRIKES
+    # =========================================================================
+    def mostrar_strikes(self):
+        self.limpiar_contenido()
+        self._encabezado("Control de strikes", "Usuarios con penalizaciones activas en el sistema")
+
+        usuarios = cargar_usuarios()
+
+        # --- Tarjetas resumen ---
+        frame_tarjetas = tk.Frame(self.area_contenido, bg=C["fondo"])
+        frame_tarjetas.pack(padx=32, fill="x", anchor="w")
+        frame_tarjetas.grid_columnconfigure((0, 1, 2), weight=1, uniform="card", minsize=140)
+
+        con_strikes = []
+        bloqueados = 0
+        suspendidos = 0
+        for usr, datos in usuarios.items():
+            if not isinstance(datos, dict):
+                continue
+            strikes = datos.get("strikes", 0)
+            if strikes and strikes > 0:
+                susp = datos.get("suspendido_hasta", None)
+                con_strikes.append((usr, datos.get("nombre", "—"),
+                                    datos.get("rol", "usuario"), strikes,
+                                    datos.get("correo", "—"), susp))
+                if strikes >= 4:
+                    bloqueados += 1
+                elif susp:
+                    try:
+                        if datetime.now().date() < datetime.strptime(susp, "%Y-%m-%d").date():
+                            suspendidos += 1
+                    except (ValueError, TypeError):
+                        pass
+
+        self._tarjeta_dashboard(frame_tarjetas, 0, "⚠", "CON STRIKES", len(con_strikes), C["acento"])
+        self._tarjeta_dashboard(frame_tarjetas, 1, "⏳", "SUSPENDIDOS", suspendidos, C["rojo"])
+        self._tarjeta_dashboard(frame_tarjetas, 2, "🚫", "BLOQUEADOS", bloqueados, C["rojo"])
+
+        # --- Tabla de strikes ---
+        tk.Label(
+            self.area_contenido, text="Detalle de usuarios con strikes",
+            font=self.f_seccion, bg=C["fondo"], fg=C["marino"]
+        ).pack(pady=(28, 14), padx=32, anchor="w")
+
+        if not con_strikes:
+            card_vacio = tk.Frame(self.area_contenido, bg=C["tarjeta"],
+                                  highlightthickness=1, highlightbackground=C["borde"])
+            card_vacio.pack(padx=32, fill="x", pady=(0, 24))
+            tk.Label(card_vacio, text="✓ Ningún usuario tiene strikes activos.",
+                     font=("Segoe UI", 10, "italic"),
+                     bg=C["tarjeta"], fg=C["verde"]).pack(padx=20, pady=24)
+            return
+
+        con_strikes.sort(key=lambda x: x[3], reverse=True)
+
+        frame_tabla = tk.Frame(self.area_contenido, bg=C["fondo"])
+        frame_tabla.pack(padx=32, pady=(0, 24), fill="both", expand=True)
+
+        self._estilizar_treeview()
+        cols = ("usuario", "nombre", "rol", "strikes", "correo", "estado")
+        self.tabla_strikes = ttk.Treeview(frame_tabla, columns=cols, show="headings",
+                                          height=15, style="Biblio.Treeview")
+        self.tabla_strikes.heading("usuario", text="Usuario")
+        self.tabla_strikes.heading("nombre", text="Nombre completo")
+        self.tabla_strikes.heading("rol", text="Rol")
+        self.tabla_strikes.heading("strikes", text="Strikes")
+        self.tabla_strikes.heading("correo", text="Correo")
+        self.tabla_strikes.heading("estado", text="Estado")
+
+        self.tabla_strikes.column("usuario", width=130, anchor="center")
+        self.tabla_strikes.column("nombre", width=180, anchor="w")
+        self.tabla_strikes.column("rol", width=90, anchor="center")
+        self.tabla_strikes.column("strikes", width=70, anchor="center")
+        self.tabla_strikes.column("correo", width=200, anchor="w")
+        self.tabla_strikes.column("estado", width=130, anchor="center")
+
+        scrollbar = ttk.Scrollbar(frame_tabla, orient="vertical", command=self.tabla_strikes.yview)
+        self.tabla_strikes.configure(yscrollcommand=scrollbar.set)
+        self.tabla_strikes.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        for usr, nombre, rol, strikes, correo, susp in con_strikes:
+            if strikes >= 4:
+                estado = "🚫 BLOQUEADO"
+            elif susp:
+                try:
+                    fecha_susp = datetime.strptime(susp, "%Y-%m-%d").date()
+                    if datetime.now().date() < fecha_susp:
+                        estado = f"⏳ Hasta {susp}"
+                    else:
+                        estado = "⚠ Con strikes"
+                except (ValueError, TypeError):
+                    estado = "⚠ Con strikes"
+            else:
+                estado = "⚠ Con strikes"
+
+            self.tabla_strikes.insert("", "end",
+                values=(usr, nombre, rol.upper(), f"{strikes}/3", correo, estado))
+
+    # =========================================================================
+    # VISTA: PRÉSTAMOS ACTIVOS
+    # =========================================================================
+    def mostrar_prestamos_activos(self):
+        self.limpiar_contenido()
+        self._encabezado("Préstamos activos", "Libros actualmente prestados a usuarios del sistema")
+
+        # Recargar préstamos
+        if self._prestamos_disponibles:
+            try:
+                from logica.prestamos import cargar_prestamos
+                cargar_prestamos()
+            except Exception:
+                pass
+
+        # --- Recopilar préstamos activos ---
+        prestamos_activos = []
+        total_vencidos = 0
+        if self._prestamos_disponibles:
+            try:
+                from logica.prestamos import lista_prestamos
+                for p in lista_prestamos:
+                    if p.get("estado") in ("activo", "vencido"):
+                        usr = p.get("usuario", "—")
+                        id_libro = p.get("id_libro", "—")
+                        fecha_prest = p.get("fecha_prestamo", "—")
+                        fecha_lim = p.get("fecha_limite", "—")
+                        estado = p.get("estado", "activo")
+
+                        # Buscar título del libro
+                        titulo_libro = id_libro
+                        for lib in lista_libros:
+                            if lib["id"] == id_libro:
+                                titulo_libro = lib["titulo"]
+                                break
+
+                        prestamos_activos.append((usr, id_libro, titulo_libro,
+                                                  fecha_prest, fecha_lim, estado))
+                        if estado == "vencido":
+                            total_vencidos += 1
+            except Exception:
+                pass
+
+        # --- Tarjetas resumen ---
+        frame_tarjetas = tk.Frame(self.area_contenido, bg=C["fondo"])
+        frame_tarjetas.pack(padx=32, fill="x", anchor="w")
+        frame_tarjetas.grid_columnconfigure((0, 1, 2), weight=1, uniform="card", minsize=140)
+
+        self._tarjeta_dashboard(frame_tarjetas, 0, "📖", "PRÉSTAMOS ACTIVOS", len(prestamos_activos), C["azul_dato"])
+        self._tarjeta_dashboard(frame_tarjetas, 1, "🟢", "AL DÍA", len(prestamos_activos) - total_vencidos, C["verde"])
+        self._tarjeta_dashboard(frame_tarjetas, 2, "🔴", "VENCIDOS", total_vencidos, C["rojo"])
+
+        # --- Tabla de préstamos ---
+        tk.Label(
+            self.area_contenido, text="Detalle de préstamos",
+            font=self.f_seccion, bg=C["fondo"], fg=C["marino"]
+        ).pack(pady=(28, 14), padx=32, anchor="w")
+
+        if not prestamos_activos:
+            card_vacio = tk.Frame(self.area_contenido, bg=C["tarjeta"],
+                                  highlightthickness=1, highlightbackground=C["borde"])
+            card_vacio.pack(padx=32, fill="x", pady=(0, 24))
+            tk.Label(card_vacio, text="✓ No hay préstamos activos en este momento.",
+                     font=("Segoe UI", 10, "italic"),
+                     bg=C["tarjeta"], fg=C["verde"]).pack(padx=20, pady=24)
+            return
+
+        frame_tabla = tk.Frame(self.area_contenido, bg=C["fondo"])
+        frame_tabla.pack(padx=32, pady=(0, 24), fill="both", expand=True)
+
+        self._estilizar_treeview()
+        cols = ("usuario", "id_libro", "titulo", "fecha_prestamo", "fecha_limite", "estado")
+        self.tabla_prestamos = ttk.Treeview(frame_tabla, columns=cols, show="headings",
+                                             height=15, style="Biblio.Treeview")
+        self.tabla_prestamos.heading("usuario", text="Usuario")
+        self.tabla_prestamos.heading("id_libro", text="ID Libro")
+        self.tabla_prestamos.heading("titulo", text="Título")
+        self.tabla_prestamos.heading("fecha_prestamo", text="Fecha préstamo")
+        self.tabla_prestamos.heading("fecha_limite", text="Fecha límite")
+        self.tabla_prestamos.heading("estado", text="Estado")
+
+        self.tabla_prestamos.column("usuario", width=120, anchor="center")
+        self.tabla_prestamos.column("id_libro", width=80, anchor="center")
+        self.tabla_prestamos.column("titulo", width=200, anchor="w")
+        self.tabla_prestamos.column("fecha_prestamo", width=110, anchor="center")
+        self.tabla_prestamos.column("fecha_limite", width=110, anchor="center")
+        self.tabla_prestamos.column("estado", width=100, anchor="center")
+
+        scrollbar = ttk.Scrollbar(frame_tabla, orient="vertical", command=self.tabla_prestamos.yview)
+        self.tabla_prestamos.configure(yscrollcommand=scrollbar.set)
+        self.tabla_prestamos.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        for usr, id_libro, titulo, fecha_prest, fecha_lim, estado in prestamos_activos:
+            if estado == "vencido":
+                estado_txt = "🔴 VENCIDO"
+            else:
+                estado_txt = "🟢 Activo"
+            self.tabla_prestamos.insert("", "end",
+                values=(usr, id_libro, titulo, fecha_prest, fecha_lim, estado_txt))
+
 
     # =========================================================================
     # VISTA: GESTIÓN DE LIBROS
@@ -638,15 +891,17 @@ class VentanaAdministrador:
 
         self._estilizar_treeview()
 
-        columnas = ("usuario", "nombre", "rol")
+        columnas = ("usuario", "nombre", "correo", "rol")
         self.tabla_usuarios = ttk.Treeview(frame_tabla, columns=columnas, show="headings", height=15, style="Biblio.Treeview")
 
         self.tabla_usuarios.heading("usuario", text="Nombre de usuario")
         self.tabla_usuarios.heading("nombre", text="Nombre completo")
+        self.tabla_usuarios.heading("correo", text="Correo")
         self.tabla_usuarios.heading("rol", text="Rol")
-        self.tabla_usuarios.column("usuario", width=220, anchor="center")
-        self.tabla_usuarios.column("nombre", width=260, anchor="w")
-        self.tabla_usuarios.column("rol", width=140, anchor="center")
+        self.tabla_usuarios.column("usuario", width=160, anchor="center")
+        self.tabla_usuarios.column("nombre", width=200, anchor="w")
+        self.tabla_usuarios.column("correo", width=220, anchor="w")
+        self.tabla_usuarios.column("rol", width=120, anchor="center")
 
         scrollbar = ttk.Scrollbar(frame_tabla, orient="vertical", command=self.tabla_usuarios.yview)
         self.tabla_usuarios.configure(yscrollcommand=scrollbar.set)
@@ -667,8 +922,9 @@ class VentanaAdministrador:
 
         for usuario, datos in usuarios.items():
             nombre = datos.get("nombre", "—") if isinstance(datos, dict) else "—"
+            correo = datos.get("correo", "—") if isinstance(datos, dict) else "—"
             rol = datos.get("rol", "usuario") if isinstance(datos, dict) else "usuario"
-            self.tabla_usuarios.insert("", "end", values=(usuario, nombre, rol.upper()))
+            self.tabla_usuarios.insert("", "end", values=(usuario, nombre, correo, rol.upper()))
 
     def editar_usuario_seleccionado(self):
         seleccion = self.tabla_usuarios.selection()
