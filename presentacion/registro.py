@@ -401,9 +401,8 @@ def pantalla_registro(posicion_actual=None):
             btn_tab_lector.config(bg=C["tab_inactivo_bg"], fg=C["tab_inactivo_fg"])
             frame_invitado.pack_forget()
             frame_admin_token.pack(fill="x", pady=(8, 0), after=fila_pass)
-            lbl_correo_status.config(
-                text="Usa tu correo institucional ULEAM", fg=C["texto_muted"]
-            )
+        # Actualizar el estado del correo según la pestaña activa
+        verificar_correo()
 
     btn_tab_lector.config(command=lambda: set_tab("lector"))
     btn_tab_admin.config(command=lambda: set_tab("admin"))
@@ -441,11 +440,35 @@ def pantalla_registro(posicion_actual=None):
     # 🔍 VERIFICACIÓN DE CORREO
     # ======================================================
     def verificar_correo(*args):
-        if var_tipo.get() == "admin":
-            return
         correo = get_valor(ent_correo).lower()
         es_uleam = correo.endswith("@live.uleam.edu.ec") or correo.endswith("@uleam.edu.ec")
 
+        # --- Modo Administrador: solo correos institucionales ---
+        if var_tipo.get() == "admin":
+            frame_invitado.pack_forget()
+            if not correo or correo == "":
+                lbl_correo_status.config(
+                    text="⚠ Solo se aceptan correos institucionales ULEAM",
+                    fg=C["advertencia"]
+                )
+            elif es_uleam:
+                lbl_correo_status.config(
+                    text="✓ Correo institucional válido para administrador",
+                    fg=C["exito"]
+                )
+            elif len(correo) > 5 and "@" in correo:
+                lbl_correo_status.config(
+                    text="✗ Solo correos @live.uleam.edu.ec o @uleam.edu.ec",
+                    fg=C["peligro"]
+                )
+            else:
+                lbl_correo_status.config(
+                    text="⚠ Solo se aceptan correos institucionales ULEAM",
+                    fg=C["advertencia"]
+                )
+            return
+
+        # --- Modo Lector ---
         if es_uleam:
             if correo in correos_validos:
                 lbl_correo_status.config(
@@ -504,6 +527,17 @@ def pantalla_registro(posicion_actual=None):
             return
 
         if tipo == "admin":
+            es_inst = correo.endswith("@live.uleam.edu.ec") or correo.endswith("@uleam.edu.ec")
+            if not es_inst:
+                messagebox.showerror(
+                    "Correo no institucional",
+                    "Para crear una cuenta de administrador se requiere un "
+                    "correo institucional ULEAM.\n\n"
+                    "Dominios válidos:\n"
+                    "  • @live.uleam.edu.ec\n"
+                    "  • @uleam.edu.ec"
+                )
+                return
             if ent_token_admin.get().strip() != CLAVE_MAESTRA_ADMIN:
                 _token_estado_error()
                 messagebox.showerror("Código incorrecto", "El código de verificación de administrador es incorrecto.")
