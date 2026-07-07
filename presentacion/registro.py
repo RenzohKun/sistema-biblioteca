@@ -406,7 +406,7 @@ def pantalla_registro(posicion_actual=None):
 
     btn_tab_lector.config(command=lambda: set_tab("lector"))
     btn_tab_admin.config(command=lambda: set_tab("admin"))
-    set_tab("lector")
+    # set_tab("lector") se llama después de definir verificar_correo
 
     # ---- SEPARADOR + BOTONES ----
     tk.Frame(padding, bg=C["borde"], height=1).pack(fill="x", pady=(18, 0))
@@ -492,6 +492,9 @@ def pantalla_registro(posicion_actual=None):
             frame_invitado.pack_forget()
 
     ent_correo.bind("<KeyRelease>", verificar_correo)
+
+    # Ahora que verificar_correo está definida, inicializar la pestaña
+    set_tab("lector")
 
     # ======================================================
     # ✅ REGISTRO
