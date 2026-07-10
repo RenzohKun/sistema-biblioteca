@@ -186,7 +186,7 @@ def guardar_usuarios(usuarios):
         return False
 
 
-ROLES_DISPONIBLES = ["admin", "bibliotecario", "usuario", "invitado"]
+ROLES_DISPONIBLES = ["admin", "bibliotecario", "usuario"]
 
 
 # =========================================================================

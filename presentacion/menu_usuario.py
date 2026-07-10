@@ -226,10 +226,9 @@ class VentanaUsuario:
         ).pack(pady=(0, 4))
 
         datos_usuario = _obtener_datos_usuario(self.usuario_login)
-        self.es_invitado = datos_usuario.get("rol") == "invitado"
 
         tk.Label(
-            self.menu_lateral, text="(Invitado)" if self.es_invitado else "(Estudiante)",
+            self.menu_lateral, text="(Estudiante)",
             bg=C["marino"], font=("Segoe UI", 8), fg=C["acento"]
         ).pack(pady=(0, 20))
 
@@ -237,16 +236,10 @@ class VentanaUsuario:
         self.seccion_activa = "dashboard"
         self.botones_menu = {}
         self._crear_boton_menu("dashboard",  "🏠  Inicio / Mi Perfil",     self.mostrar_inicio)
-        
-        if not self.es_invitado:
-            self._crear_boton_menu("prestamos",  "📚  Préstamo de Libros",     self.mostrar_prestamos)
-            
+        self._crear_boton_menu("prestamos",  "📚  Préstamo de Libros",     self.mostrar_prestamos)
         self._crear_boton_menu("digital",    "🌐  Librería Digital",       self.mostrar_libreria_digital)
         self._crear_boton_menu("catalogo",   "🔍  Catálogo / Estantería",  self.mostrar_catalogo)
-        
-        if not self.es_invitado:
-            self._crear_boton_menu("sugerencias","💬  Buzón de Sugerencias",   self.mostrar_sugerencias)
-            
+        self._crear_boton_menu("sugerencias","💬  Buzón de Sugerencias",   self.mostrar_sugerencias)
         self._crear_boton_menu("perfil",     "⚙️  Mi Cuenta",              self.mostrar_editar_perfil)
 
         # Botón cerrar sesión
@@ -348,36 +341,29 @@ class VentanaUsuario:
         frame_tarjetas.pack(padx=32, fill="x", anchor="w")
         frame_tarjetas.grid_columnconfigure((0, 1, 2), weight=1, uniform="card", minsize=140)
 
-        if self.es_invitado:
-            self._tarjeta_dashboard(frame_tarjetas, 0, "📕", "LIBROS PRESTADOS", "0", C["texto_muted"])
-            self._tarjeta_dashboard(frame_tarjetas, 1, "⚠", "STRIKES", "N/A", C["texto_muted"])
-            self._tarjeta_dashboard(frame_tarjetas, 2, "👤", "TIPO DE CUENTA", "INVITADO", C["azul_dato"])
-            motivo = "⚠ Estás utilizando una cuenta de Invitado. No tienes acceso al préstamo de libros físicos, pero puedes acceder a la Librería Digital y al Catálogo."
-            color_msg = C["azul_dato"]
+        prestamos_activos = PR.contar_prestamos_activos_usuario(self.nombre_completo)
+        strikes = datos.get("strikes", 0)
+
+        # Color del strike según gravedad
+        if strikes == 0:
+            color_strike = C["verde"]
+        elif strikes <= 2:
+            color_strike = C["acento"]
         else:
-            prestamos_activos = PR.contar_prestamos_activos_usuario(self.nombre_completo)
-            strikes = datos.get("strikes", 0)
+            color_strike = C["rojo"]
 
-            # Color del strike según gravedad
-            if strikes == 0:
-                color_strike = C["verde"]
-            elif strikes <= 2:
-                color_strike = C["acento"]
-            else:
-                color_strike = C["rojo"]
+        self._tarjeta_dashboard(frame_tarjetas, 0, "📕", "LIBROS PRESTADOS", prestamos_activos, C["marino"])
+        self._tarjeta_dashboard(frame_tarjetas, 1, "⚠", "STRIKES", f"{strikes} / 3", color_strike)
 
-            self._tarjeta_dashboard(frame_tarjetas, 0, "📕", "LIBROS PRESTADOS", prestamos_activos, C["marino"])
-            self._tarjeta_dashboard(frame_tarjetas, 1, "⚠", "STRIKES", f"{strikes} / 3", color_strike)
-
-            # Estado: activo / suspendido / bloqueado
-            if strikes >= 4:
-                estado_texto, estado_color = "BLOQUEADO", C["rojo"]
-            elif not puede_pedir:
-                estado_texto, estado_color = "SUSPENDIDO", C["acento"]
-            else:
-                estado_texto, estado_color = "ACTIVO", C["verde"]
-            self._tarjeta_dashboard(frame_tarjetas, 2, "🟢" if puede_pedir else "🔴", "ESTADO", estado_texto, estado_color)
-            color_msg = C["verde"] if puede_pedir else C["rojo"]
+        # Estado: activo / suspendido / bloqueado
+        if strikes >= 4:
+            estado_texto, estado_color = "BLOQUEADO", C["rojo"]
+        elif not puede_pedir:
+            estado_texto, estado_color = "SUSPENDIDO", C["acento"]
+        else:
+            estado_texto, estado_color = "ACTIVO", C["verde"]
+        self._tarjeta_dashboard(frame_tarjetas, 2, "🟢" if puede_pedir else "🔴", "ESTADO", estado_texto, estado_color)
+        color_msg = C["verde"] if puede_pedir else C["rojo"]
 
         # --- MENSAJE DE ESTADO ---
         frame_estado = tk.Frame(self.area_contenido, bg=C["tarjeta"],
@@ -403,9 +389,8 @@ class VentanaUsuario:
         frame_acciones = tk.Frame(self.area_contenido, bg=C["fondo"])
         frame_acciones.pack(padx=32, fill="x", anchor="w")
 
-        if not self.es_invitado:
-            self._boton_accion(frame_acciones, "📚  Solicitar préstamo", C["verde"], C["verde_hover"],
-                               self.mostrar_prestamos).pack(side="left", padx=(0, 14))
+        self._boton_accion(frame_acciones, "📚  Solicitar préstamo", C["verde"], C["verde_hover"],
+                           self.mostrar_prestamos).pack(side="left", padx=(0, 14))
 
         self._boton_accion(frame_acciones, "🌐  Librería Digital", C["azul_dato"], C["azul_dato_hover"],
                            self.mostrar_libreria_digital).pack(side="left", padx=(0, 14))
@@ -413,39 +398,38 @@ class VentanaUsuario:
                            self.mostrar_catalogo).pack(side="left")
 
         # --- HISTORIAL RECIENTE ---
-        if not self.es_invitado:
-            tk.Label(
-                self.area_contenido, text="Mi actividad reciente",
-                font=self.f_seccion, bg=C["fondo"], fg=C["marino"]
-            ).pack(pady=(30, 12), padx=32, anchor="w")
+        tk.Label(
+            self.area_contenido, text="Mi actividad reciente",
+            font=self.f_seccion, bg=C["fondo"], fg=C["marino"]
+        ).pack(pady=(30, 12), padx=32, anchor="w")
 
-            historial = PR.historial_usuario(self.nombre_completo)
-            frame_hist = tk.Frame(self.area_contenido, bg=C["tarjeta"],
-                                  highlightthickness=1, highlightbackground=C["borde"])
-            frame_hist.pack(padx=32, pady=(0, 24), fill="x")
-            inner_hist = tk.Frame(frame_hist, bg=C["tarjeta"])
-            inner_hist.pack(fill="x", padx=18, pady=14)
+        historial = PR.historial_usuario(self.nombre_completo)
+        frame_hist = tk.Frame(self.area_contenido, bg=C["tarjeta"],
+                              highlightthickness=1, highlightbackground=C["borde"])
+        frame_hist.pack(padx=32, pady=(0, 24), fill="x")
+        inner_hist = tk.Frame(frame_hist, bg=C["tarjeta"])
+        inner_hist.pack(fill="x", padx=18, pady=14)
 
-            if not historial:
-                tk.Label(inner_hist, text="Todavía no tienes movimientos registrados.",
-                         font=self.f_actividad, bg=C["tarjeta"], fg=C["texto_muted"]).pack(anchor="w")
-            else:
-                titulos_por_id = {lib["id"]: lib["titulo"] for lib in lista_libros}
-                for i, p in enumerate(historial[-6:]):
-                    titulo = titulos_por_id.get(p["id_libro"], p["id_libro"])
-                    if p["estado"] == "devuelto":
-                        icono, texto, color = "📗", f'Devolviste "{titulo}"', C["verde"]
-                    elif p["estado"] == "vencido":
-                        icono, texto, color = "⏰", f'"{titulo}" está vencido', C["rojo"]
-                    else:
-                        icono, texto, color = "📕", f'Tienes prestado "{titulo}"', C["azul_dato"]
+        if not historial:
+            tk.Label(inner_hist, text="Todavía no tienes movimientos registrados.",
+                     font=self.f_actividad, bg=C["tarjeta"], fg=C["texto_muted"]).pack(anchor="w")
+        else:
+            titulos_por_id = {lib["id"]: lib["titulo"] for lib in lista_libros}
+            for i, p in enumerate(historial[-6:]):
+                titulo = titulos_por_id.get(p["id_libro"], p["id_libro"])
+                if p["estado"] == "devuelto":
+                    icono, texto, color = "📗", f'Devolviste "{titulo}"', C["verde"]
+                elif p["estado"] == "vencido":
+                    icono, texto, color = "⏰", f'"{titulo}" está vencido', C["rojo"]
+                else:
+                    icono, texto, color = "📕", f'Tienes prestado "{titulo}"', C["azul_dato"]
 
-                    fila = tk.Frame(inner_hist, bg=C["tarjeta"])
-                    fila.pack(fill="x", pady=(0 if i == 0 else 5, 0))
-                    tk.Label(fila, text=icono, bg=C["tarjeta"], font=("Segoe UI", 10)).pack(side="left", padx=(0, 8))
-                    tk.Label(fila, text=texto, bg=C["tarjeta"], font=self.f_actividad, fg=C["texto"]).pack(side="left")
-                    tk.Label(fila, text=p["fecha_prestamo"], bg=C["tarjeta"],
-                             font=("Segoe UI", 8), fg=C["texto_muted"]).pack(side="right")
+                fila = tk.Frame(inner_hist, bg=C["tarjeta"])
+                fila.pack(fill="x", pady=(0 if i == 0 else 5, 0))
+                tk.Label(fila, text=icono, bg=C["tarjeta"], font=("Segoe UI", 10)).pack(side="left", padx=(0, 8))
+                tk.Label(fila, text=texto, bg=C["tarjeta"], font=self.f_actividad, fg=C["texto"]).pack(side="left")
+                tk.Label(fila, text=p["fecha_prestamo"], bg=C["tarjeta"],
+                         font=("Segoe UI", 8), fg=C["texto_muted"]).pack(side="right")
 
     # =====================================================================
     # 📚 VISTA: PRÉSTAMO DE LIBROS

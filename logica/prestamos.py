@@ -198,7 +198,7 @@ def rechazar_reserva(indice):
 
 
 # =========================================================================
-# CONSULTAS POR USUARIO — usadas por el panel de estudiante/invitado
+# CONSULTAS POR USUARIO — usadas por el panel de estudiante
 # =========================================================================
 def prestamos_de_usuario(nombre_usuario):
     """Devuelve la lista de préstamos activos o vencidos de un usuario."""

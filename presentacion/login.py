@@ -262,7 +262,7 @@ def pantalla_login(posicion_actual=None):
         # Login exitoso
         lbl_error.config(text="")
         datos  = usuarios[usuario]
-        rol    = datos.get("rol", "invitado")
+        rol    = datos.get("rol", "usuario")
         nombre = datos.get("nombre", usuario)
 
         messagebox.showinfo(
@@ -277,7 +277,7 @@ def pantalla_login(posicion_actual=None):
         y = root.winfo_y()
         root.destroy()
 
-        # ✅ Navegar según el rol — 4 roles posibles: admin, bibliotecario, usuario, invitado
+        # ✅ Navegar según el rol — 3 roles posibles: admin, bibliotecario, usuario
         if rol == "admin":
             try:
                 from presentacion.admin import VentanaAdministrador
@@ -308,7 +308,7 @@ def pantalla_login(posicion_actual=None):
                 except ImportError as e:
                     messagebox.showerror("Error de importación", f"No se pudo cargar el menú de usuario:\n{e}")
 
-        else:  # "usuario" o "invitado"
+        else:  # "usuario"
             try:
                 from presentacion.menu_usuario import pantalla_usuario
                 pantalla_usuario(usuario=usuario, posicion_actual=(x, y))

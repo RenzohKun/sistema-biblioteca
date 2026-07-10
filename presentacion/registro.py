@@ -360,33 +360,6 @@ def pantalla_registro(posicion_actual=None):
     # Al escribir, restaurar el color normal (quitar alerta de error anterior)
     ent_token_admin.bind("<KeyRelease>", lambda e: _token_estado_normal())
 
-    # ---- PANEL INVITADO ----
-    frame_invitado = tk.Frame(padding, bg=C["tarjeta"])
-
-    tk.Frame(frame_invitado, bg="#FEF3C7", height=1).pack(fill="x", pady=(8, 0))
-    tk.Label(
-        frame_invitado, text="Datos adicionales del visitante",
-        font=("Segoe UI", 9, "bold"), fg="#92400E", bg=C["tarjeta"]
-    ).pack(anchor="w", pady=(6, 0))
-
-    fila_nombre = tk.Frame(frame_invitado, bg=C["tarjeta"])
-    fila_nombre.pack(fill="x")
-    fila_nombre.columnconfigure(0, weight=1)
-    fila_nombre.columnconfigure(1, weight=1)
-
-    col_n = tk.Frame(fila_nombre, bg=C["tarjeta"])
-    col_n.grid(row=0, column=0, sticky="ew", padx=(0, 5))
-    tk.Label(col_n, text="Nombre", font=("Segoe UI", 9, "bold"),
-             fg=C["texto_label"], bg=C["tarjeta"]).pack(anchor="w", pady=(8, 3))
-    _, ent_nombre = crear_campo(col_n, "👤", "Nombre")
-
-    col_a = tk.Frame(fila_nombre, bg=C["tarjeta"])
-    col_a.grid(row=0, column=1, sticky="ew", padx=(5, 0))
-    tk.Label(col_a, text="Apellido", font=("Segoe UI", 9, "bold"),
-             fg=C["texto_label"], bg=C["tarjeta"]).pack(anchor="w", pady=(8, 3))
-    _, ent_apellido = crear_campo(col_a, "👤", "Apellido")
-
-    # frame_invitado empieza oculto; solo aparece cuando el correo es de visitante/externo
 
     # ---- SET_TAB (definida aquí para tener acceso a todos los frames) ----
     def set_tab(tipo):
@@ -395,11 +368,9 @@ def pantalla_registro(posicion_actual=None):
             btn_tab_lector.config(bg=C["tab_activo_bg"], fg=C["tab_activo_fg"])
             btn_tab_admin.config(bg=C["tab_inactivo_bg"], fg=C["tab_inactivo_fg"])
             frame_admin_token.pack_forget()
-            frame_invitado.pack_forget()
         else:
             btn_tab_admin.config(bg=C["tab_activo_bg"], fg=C["tab_activo_fg"])
             btn_tab_lector.config(bg=C["tab_inactivo_bg"], fg=C["tab_inactivo_fg"])
-            frame_invitado.pack_forget()
             frame_admin_token.pack(fill="x", pady=(8, 0), after=fila_pass)
         # Actualizar el estado del correo según la pestaña activa
         verificar_correo()
@@ -445,7 +416,6 @@ def pantalla_registro(posicion_actual=None):
 
         # --- Modo Administrador: solo correos institucionales ---
         if var_tipo.get() == "admin":
-            frame_invitado.pack_forget()
             if not correo or correo == "":
                 lbl_correo_status.config(
                     text="⚠ Solo se aceptan correos institucionales ULEAM",
@@ -474,22 +444,19 @@ def pantalla_registro(posicion_actual=None):
                 lbl_correo_status.config(
                     text="✓ Correo institucional verificado (ULEAM)", fg=C["exito"]
                 )
-                frame_invitado.pack_forget()
             else:
                 lbl_correo_status.config(
-                    text="⚠ Correo ULEAM no registrado en el padrón", fg=C["peligro"]
+                    text="✗ Correo ULEAM no registrado en el padrón", fg=C["peligro"]
                 )
-                frame_invitado.pack(fill="x", after=lbl_correo_status)
-        elif len(correo) > 5 and "@" in correo:
-            lbl_correo_status.config(
-                text="👤 Correo externo: completa los datos de visitante", fg=C["advertencia"]
-            )
-            frame_invitado.pack(fill="x", after=lbl_correo_status)
         else:
-            lbl_correo_status.config(
-                text="Ingresa tu correo electrónico", fg=C["texto_muted"]
-            )
-            frame_invitado.pack_forget()
+            if correo:
+                lbl_correo_status.config(
+                    text="✗ Solo se aceptan correos institucionales ULEAM", fg=C["peligro"]
+                )
+            else:
+                lbl_correo_status.config(
+                    text="Ingresa tu correo electrónico", fg=C["texto_muted"]
+                )
 
     ent_correo.bind("<KeyRelease>", verificar_correo)
 
@@ -549,17 +516,15 @@ def pantalla_registro(posicion_actual=None):
             nombre_completo = "Administrador del Sistema"
         else:
             es_inst = correo.endswith("@live.uleam.edu.ec") or correo.endswith("@uleam.edu.ec")
-            if es_inst and correo in correos_validos:
-                rol = "estudiante"
-                nombre_completo = "Estudiante ULEAM Autoverificado"
-            else:
-                rol = "invitado"
-                nom = get_valor(ent_nombre)
-                ape = get_valor(ent_apellido)
-                if not nom or not ape:
-                    messagebox.showerror("Datos faltantes", "Como visitante, debes ingresar nombre y apellido.")
-                    return
-                nombre_completo = f"{nom} {ape}"
+            if not es_inst or correo not in correos_validos:
+                messagebox.showerror(
+                    "Correo no válido",
+                    "Solo los estudiantes matriculados pueden registrarse.\n"
+                    "Asegúrate de usar tu correo institucional y estar en el padrón."
+                )
+                return
+            rol = "estudiante"
+            nombre_completo = "Estudiante ULEAM Autoverificado"
 
         usuarios[usuario] = {
             "clave":    clave,
@@ -587,8 +552,6 @@ def pantalla_registro(posicion_actual=None):
     def _next_after_pass_conf(e):
         if var_tipo.get() == "admin":
             ent_token_admin.focus_set()
-        elif frame_invitado.winfo_ismapped():
-            ent_nombre.focus_set()
         else:
             registrar_usuario()
 
