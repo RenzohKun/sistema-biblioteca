@@ -41,16 +41,5 @@
     "strikes": 0,
     "deuda": 0.0,
     "suspendido_hasta": null
-  },
-  "eso tilin": {
-    "clave": "1234",
-    "rol": "invitado",
-    "cedula": "13245678943",
-    "nombre": "Juan Fernandez",
-    "correo": "cetace1234@gmail.com",
-    "telefono": "00000000000000",
-    "strikes": 0,
-    "deuda": 0.0,
-    "suspendido_hasta": null
   }
 }
