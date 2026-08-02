@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Sistema de Gestión de Biblioteca Universitaria ULEAM — Administración de libros, préstamos y usuarios.">
+  <title>Biblioteca ULEAM — Sistema de Gestión</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<!-- ============================================================
+     PANTALLA 1: BIENVENIDA (equivale a main.py)
+     ============================================================ -->
+<div id="screen-welcome" class="screen">
+  <div class="welcome-layout">
+    <!-- Columna izquierda: logo + institución -->
+    <div class="welcome-left">
+      <div class="welcome-logo-wrap">
+        <img id="logo-img" alt="Logo ULEAM" class="welcome-logo-img"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <span class="welcome-logo-fallback">📚</span>
+      </div>
+      <h1 class="welcome-inst-title">BIBLIOTECA ULEAM</h1>
+      <div class="welcome-divider"></div>
+      <p class="welcome-inst-sub">Universidad Laica Eloy Alfaro<br>de Manabí</p>
+    </div>
+
+    <!-- Columna derecha: botones de acceso -->
+    <div class="welcome-right">
+      <h2>Bienvenido</h2>
+      <p>Sistema de Gestión de Libros y Usuarios</p>
+      <div class="welcome-divider-h"></div>
+      <div class="welcome-btn-group">
+        <button id="btn-go-login" class="btn btn-secondary btn-full btn-lg">🔑 Iniciar sesión</button>
+        <button id="btn-go-register" class="btn btn-success btn-full btn-lg">📝 Crear una cuenta</button>
+        <div class="welcome-divider-h"></div>
+        <button id="btn-exit" class="btn btn-ghost btn-full" onclick="window.close()">Salir del sistema</button>
+      </div>
+    </div>
+  </div>
+  <footer class="welcome-footer">© ULEAM — Sistema de Gestión de Biblioteca · 2026</footer>
+</div>
+
+
+<!-- ============================================================
+     PANTALLA 2: LOGIN (equivale a login.py)
+     ============================================================ -->
+<div id="screen-login" class="screen">
+  <div class="auth-container">
+    <div class="auth-card">
+      <div class="auth-icon">📚</div>
+      <h2 class="auth-title">Iniciar sesión</h2>
+      <p class="auth-subtitle">Sistema de Gestión de Biblioteca ULEAM</p>
+      <div class="divider"></div>
+
+      <div class="form-group mb-3">
+        <label class="form-label" for="login-username">Usuario</label>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span>👤</span>
+          <input type="text" id="login-username" class="form-input" placeholder="Nombre de usuario" autocomplete="username">
+        </div>
+      </div>
+
+      <div class="form-group mb-2">
+        <label class="form-label" for="login-password">Contraseña</label>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span>🔒</span>
+          <input type="password" id="login-password" class="form-input" placeholder="Tu contraseña" autocomplete="current-password">
+        </div>
+      </div>
+
+      <p id="login-error" class="error-text mb-2"></p>
+      <div class="divider"></div>
+
+      <button id="btn-login" class="btn btn-primary btn-full mt-2">Ingresar</button>
+      <button id="btn-to-register" class="btn btn-outline btn-full mt-2">¿No tienes cuenta? Regístrate</button>
+      <button id="btn-login-back" class="btn btn-ghost btn-full mt-2">← Volver al menú principal</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ============================================================
+     PANTALLA 3: REGISTRO (equivale a registro.py)
+     ============================================================ -->
+<div id="screen-register" class="screen">
+  <div class="auth-container" style="max-width:520px">
+    <div class="auth-card">
+      <div class="auth-icon" style="background:#D1FAE5">📝</div>
+      <h2 class="auth-title">Crear cuenta</h2>
+      <p class="auth-subtitle">Ingresa tus datos para registrarte en la biblioteca</p>
+      <div class="divider"></div>
+
+      <div class="form-grid form-grid-2 mb-3">
+        <div class="form-group">
+          <label class="form-label" for="reg-username">Usuario *</label>
+          <input type="text" id="reg-username" class="form-input" placeholder="minimo 3 caracteres" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="reg-clave">Contraseña *</label>
+          <input type="password" id="reg-clave" class="form-input" placeholder="mínimo 4 caracteres">
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label class="form-label" for="reg-nombre">Nombre completo *</label>
+          <input type="text" id="reg-nombre" class="form-input" placeholder="Tu nombre y apellido">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="reg-cedula">Cédula</label>
+          <input type="text" id="reg-cedula" class="form-input" placeholder="Número de cédula">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="reg-telefono">Teléfono</label>
+          <input type="tel" id="reg-telefono" class="form-input" placeholder="0987654321">
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label class="form-label" for="reg-correo">Correo electrónico</label>
+          <input type="email" id="reg-correo" class="form-input" placeholder="usuario@live.uleam.edu.ec">
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label class="form-label" for="reg-maestra">Clave de personal (opcional)</label>
+          <input type="password" id="reg-maestra" class="form-input" placeholder="Solo para personal de biblioteca">
+        </div>
+      </div>
+
+      <p id="register-error" class="error-text mb-2"></p>
+      <p id="register-success" class="success-text mb-2"></p>
+      <div class="divider"></div>
+
+      <button id="btn-register" class="btn btn-success btn-full mt-2">Crear cuenta</button>
+      <button id="btn-to-login" class="btn btn-outline btn-full mt-2">¿Ya tienes cuenta? Inicia sesión</button>
+      <button id="btn-register-back" class="btn btn-ghost btn-full mt-2">← Volver al menú principal</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ============================================================
+     APP SHELL — Panel principal (post-login)
+     Equivale a: admin.py, menu_bibliotecario.py, menu_usuario.py
+     ============================================================ -->
+<div id="app-shell" class="screen">
+
+  <!-- Barra lateral de navegación -->
+  <aside id="sidebar">
+    <div class="sidebar-header">
+      <span class="sidebar-logo">📚 BIBLIOTECA</span>
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-user">
+        <span id="sidebar-username">Usuario</span>
+        <span id="sidebar-role">(Estudiante)</span>
+      </div>
+    </div>
+
+    <nav id="sidebar-nav" class="sidebar-nav">
+      <!-- Generado dinámicamente por UI.buildSidebar() -->
+    </nav>
+
+    <button id="btn-logout" class="btn-logout">Cerrar sesión</button>
+  </aside>
+
+  <!-- Área de contenido principal -->
+  <main id="content">
+    <!-- Contenido renderizado dinámicamente por UI.navigate() -->
+  </main>
+</div>
+
+
+<!-- ============================================================
+     MODAL GENÉRICO (reutilizable para todos los formularios)
+     ============================================================ -->
+<div id="modal-overlay" class="modal-overlay hidden">
+  <div id="modal-box" class="modal-box">
+    <div class="modal-header">
+      <div class="bar" style="background:var(--marino);height:5px"></div>
+      <div class="bar bar-accent"></div>
+    </div>
+    <span id="modal-title"></span>
+    <div id="modal-body"></div>
+    <div class="modal-footer">
+      <button id="modal-cancel" class="btn btn-outline">Cancelar</button>
+      <button id="modal-confirm" class="btn btn-success">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- TOAST (notificaciones) -->
+<div id="toast" class="toast" role="alert" aria-live="polite"></div>
+
+
+<!-- ============================================================
+     SCRIPTS — Orden: datos → lógica → UI → app
+     ============================================================ -->
+<script src="js/images.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/libros.js"></script>
+<script src="js/prestamos.js"></script>
+<script src="js/usuarios.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
